@@ -17,6 +17,8 @@ $ARGUMENTS
 
 Work silently between gates. Surface results inline. When the user must decide, ask plainly — numbered options for pure choices, open question when they need to type.
 
+If the diff hasn't been through `/examine` and isn't trivial (config tweak, rename, one-line fix), mention it once before drafting — never block.
+
 ---
 
 ## Preflight
@@ -123,7 +125,7 @@ Same as the commit message. If the commit message works as a title, reuse it.
 
 ### PR description
 
-The reader should understand the change without opening JIRA or scrolling. Every word earns its place — absorb enough ticket context that the JIRA link is a reference, not a dependency. Bullets and tables over prose. No padding, no ceremony.
+The reader should understand the change without opening JIRA or scrolling — absorb enough ticket context that the JIRA link is a reference, not a dependency. Bullets and tables over prose. No padding.
 
 **Scale to the diff.** Small changes (1-3 files, focused) get a lean description. Larger changes get the full structure. Use what fits, drop what doesn't:
 
@@ -159,7 +161,7 @@ Show the commit message, PR title, PR description, and base/head branches. Ask: 
 
 Execute in sequence. Stop on any failure and surface it.
 
-1. **Stage** — all relevant changes. Exclude task files, plan files, .env, and secrets automatically.
+1. **Stage** — all tracked changes except task files, plan files, `.env`, and secrets.
 2. **Commit** — with the approved message.
 3. **Push** — `git push -u origin {branch}`. On failure, surface the error and ask.
 4. **Create PR** — via `gh pr create`. If `gh` is unavailable, surface the description for manual creation.

@@ -9,9 +9,9 @@ Each stage has its own gate, skills hand off context through files, and they pic
 | Skill        | Description                                                                             |
 | ------------ | --------------------------------------------------------------------------------------- |
 | `/start`     | Fetch a JIRA ticket, scope it against the codebase, set up a workspace with a task file |
-| `/think`     | Socratic study mode or plan mode — deepens understanding or pressure-tests decisions    |
+| `/unpack`    | Socratic study mode or plan mode — dig into a topic or shape a plan through dialogue    |
 | `/collab`    | Collaborative coding partner that calibrates from a nudge to taking the keyboard        |
-| `/challenge` | Adversarial Advocate/Adversary loop to pressure-test code or a plan                     |
+| `/examine`   | Adversarial Advocate/Adversary loop to pressure-test code or a plan                     |
 | `/ship`      | Run checks, verify AC, draft commit and PR, ship with approval at each gate             |
 | `/peer`      | Review a teammate's PR — understand it, surface strengths and weaknesses                |
 
@@ -20,30 +20,30 @@ Each stage has its own gate, skills hand off context through files, and they pic
 ```
 /start <ticket>     Pick up a ticket, set up the workspace
         ↓
-/think              Think it through, plan the approach
+/unpack             Understand the problem, shape the approach
         ↓
 /collab             Pair on the implementation
         ↓
-/challenge          Pressure-test before shipping
+/examine            Pressure-test before shipping
         ↓
 /ship               Checks, commit, PR
 
 /peer <PR>          Review someone else's work
 ```
 
-The diagram shows the full sequence, but `/think`, `/collab`, and `/challenge` also work independently — you don't need a ticket to use them.
+The diagram shows the full sequence, but `/unpack`, `/collab`, and `/examine` also work independently — you don't need a ticket to use them.
 
 ### How the skills connect
 
 The skills pass context through files in the working directory:
 
 - `/start` spins up a worktree or branch, primed with `{TICKET}-TASK.md` — ticket summary, AC, starting points
-- `/think` reads the task file; in plan mode, writes `{TICKET}-PLAN.md` — approach, steps, assumptions
+- `/unpack` reads the task file; in plan mode, writes `{TICKET}-PLAN.md` — approach, steps, assumptions
 - `/collab` and `/ship` read both files for context
-- `/challenge` reads the plan file, or targets whatever you point it at
+- `/examine` reads the plan file, or targets whatever you point it at
 - `/ship` excludes task and plan files from commits automatically
 
-If your project has a `CLAUDE.md`, `/start`, `/ship`, and `/challenge` adapt to its conventions (branch naming, commit style, PR templates, test commands, codebase patterns).
+If your project has a `CLAUDE.md`, the skills adapt to its conventions (branch naming, commit style, PR templates, test commands, codebase patterns).
 
 ## What it looks like
 
@@ -82,7 +82,7 @@ AC VERIFICATION
 
 ## Assumptions
 
-- The skills assume the working directory is a git repository.
+- The skills assume the working directory is a git repository hosted on **GitHub**. `/ship` and `/peer` shell out to `gh` for PR creation and review — other hosts (GitLab, Bitbucket) are not supported.
 - `/start` assumes [VS Code](https://code.visualstudio.com/) (`code` CLI) to open the workspace. Adapt if you use a different editor.
 
 ## Installation

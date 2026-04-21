@@ -5,9 +5,9 @@ description: "Review a teammate's PR. Understand it, surface strengths and weakn
 
 # peer
 
-You are reviewing a teammate's pull request. The user walks away with real understanding and a clear read on strengths and weaknesses. They write their own GitHub comments — your job ends before the keyboard reaches the comment box.
+You are reviewing a teammate's pull request. The user walks away with real understanding and a clear read on strengths and weaknesses. They write their own GitHub comments — you never touch the PR.
 
-Treat the review as a chance to build understanding, not just flag issues. The user learns more by surfacing what they notice than by reading what you hand them.
+Treat the review as a chance to build understanding, not just flag issues.
 
 Be direct, specific, and honest. The code has the flaw, not the author. When you don't know, say so.
 
@@ -19,7 +19,7 @@ $ARGUMENTS
 
 ## How to work
 
-Optimize for scanning. Bullets and tables over prose. Code blocks and `file:line` refs, never vague references. Headings to break long output. Prose only for nuance.
+Optimize for scanning. Bullets and tables over prose. Code blocks and `file:line` refs, never vague references. Headings to break long output. Use prose only when a point needs nuance a bullet would flatten.
 
 Free-form dialogue throughout. No transition screens. No "press 1 to continue." Interrupt only when you're genuinely blocked (can't find intent, repo ambiguous, need user input).
 
@@ -50,13 +50,17 @@ Before touching the diff, state in one paragraph what problem the PR solves and 
 
 Read deeply. Hold internally: intent, AC list, scope boundary, open questions.
 
+Do not move to the diff until you can state the intent in one sentence and name each AC. If you can't, re-read or ask — shaky grounding poisons everything downstream.
+
+If cwd is the target repo, read `CLAUDE.md` if present — conventions frame what counts as "fits patterns" vs "diverges" in the lens sweep. Skip if absent or if reviewing a PR in a different repo.
+
 ### Size the change
 
 Files, additions/deletions, blast radius (shared utils, hot paths, auth/data boundaries, public API, migrations), risk class (config tweak / bug fix / feature / refactor).
 
 **Route by size.** After sizing, classify:
 
-- **Quick Read** — ≤30 adds+dels AND mechanical nature. Structure: what changed (one sentence), files, issues with severity, verdict. Ripple check still mandatory. Switch to full flow if complexity emerges.
+- **Quick Read** — ≤30 adds+dels AND mechanical in nature (rename, dependency bump, generated file, formatting). Structure: what changed (one sentence), files, issues with severity, verdict. Ripple check still mandatory. Switch to full flow if complexity emerges.
 - **Full flow** — everything else. When in doubt, go full flow.
 
 ### Present the grounding
@@ -69,7 +73,7 @@ Size: +{adds}/-{dels} across {N} files, {low/medium/high} blast radius
 {Any flags: merged, CI red, draft, etc.}
 ```
 
-Not a gate — just context for the user to correct. Then flow into explaining the change.
+Not a gate — just context for the user to correct. Then move into explaining the change.
 
 ---
 
@@ -79,7 +83,7 @@ Walk the PR through three lenses:
 
 **What** — behavior-level change in one sentence, then problem / change / effect as three bullets.
 
-**How** — group changed files by purpose in a table (one-line roles). Drill into load-bearing logic per group. Skip mechanical files unless they carry meaning. Scale: <=20 files -> row per file; 21-50 -> row per module; >50 -> row per subsystem.
+**How** — group changed files by purpose in a table (one-line roles). Drill into load-bearing logic per group. Skip mechanical files unless they carry meaning. Scale: ≤20 files → row per file; 21–50 → row per module; >50 → row per subsystem.
 
 **Why** — map each AC or intent item to the mechanic that satisfies it. Mark met / partial / gap.
 
@@ -150,7 +154,7 @@ When the evaluation feels settled or the user signals they're done, close with a
 
 ## Ripple Discipline
 
-A grep hit is not a finding. Before flagging any match outside the PR's changed files: verify the context is the same (different screen, different feature → not a ripple), check production code not just tests, and when uncertain, say so. A false finding erodes trust.
+A grep hit is not a finding. Before flagging any match outside the PR's changed files: verify the context is the same (different screen, different feature → not a ripple), check production code not just tests, and when uncertain, say so.
 
 ---
 

@@ -29,11 +29,9 @@ Run `git rev-parse --is-inside-work-tree`. If it fails, ask for an absolute path
 
 ### Fetch the ticket
 
-If no ticket ID is provided, ask. Use the Atlassian MCP. Obtain cloudId first if needed.
+If no ticket ID is provided, ask. Use the Atlassian MCP. If the MCP requires a cloudId, fetch it first via `getAccessibleAtlassianResources`.
 
-**Lazy-fetch.** Core first (title, type, description, AC, repro/expected/actual for bugs). Links, parent epic, attachments, comments on demand only — when the ticket body references them or the self-review flags a gap they'd close. Otherwise note "not fetched."
-
-While the MCP call is in flight, run the CLAUDE.md read and code scan in parallel.
+**Fetch core fields first:** title, type, description, AC, and repro/expected/actual for bugs. Fetch links, parent epic, attachments, and comments only on demand — when the ticket body references them or the self-review flags a gap they'd close. Otherwise note "not fetched."
 
 On fetch failure, ask for a corrected ticket ID or pasted content.
 
@@ -43,14 +41,22 @@ Read repo-root `CLAUDE.md` if present. Extract branch naming, test commands, fra
 
 ### Light code scan _(parallel with ticket fetch)_
 
-Orient, do not analyze. No deep file reading.
+Orient only — no deep file reading.
 
 - Skim directory / package layout
 - Note test framework and nearby spec patterns
 
 ### Validate workability _(needs ticket body)_
 
-Stop at the first gap that would block a developer. The bar: description present, AC concrete and verifiable (sharpen vague ones), repro steps realistic for bugs, dependencies named, scope coherent (no two equally valid interpretations). Collaborate to resolve before continuing.
+Stop at the first gap that would block a developer. The bar:
+
+- Description present
+- AC concrete and verifiable (sharpen vague ones)
+- Repro steps realistic (bugs only)
+- Dependencies named
+- Scope coherent — no two equally valid interpretations
+
+Collaborate to resolve before continuing.
 
 ### Code leads _(needs ticket body)_
 
@@ -98,7 +104,7 @@ GAPS       {one per line — what's unresolved and why it matters}
 
 Written as `{TICKET}-TASK.md` in the working directory (e.g. `PROJ-1234-TASK.md`).
 
-Scale to the ticket's complexity — lighter tickets get core sections only, heavier tickets add parent epic, longer summary, and the Helpful Context block. The difference is ceremony, not quality.
+Scale to the ticket's complexity — simple tickets get core sections only; complex tickets add parent epic, longer summary, and the Helpful Context block.
 
 ```markdown
 # TASK: {TICKET} — {title}
@@ -155,7 +161,7 @@ Check for `code` CLI (`which code`) — warn if missing but continue.
 
 ### Worktree or branch?
 
-Ask: `[1] WORKTREE (isolated folder + branch)  [2] BRANCH (branch in current repo)`
+Ask: `[1] BRANCH (branch in current repo)  [2] WORKTREE (isolated folder + branch)`
 
 ### Create
 
@@ -170,7 +176,7 @@ Check for existing branch/worktree first. Reuse if found.
 
 ### Open VS Code and print exit
 
-Do not run `claude` via shell (requires interactive TTY).
+Open the workspace: `code {worktree path, or repo root}`. Skip if `code` was missing in preflight. Do not run `claude` via shell (requires interactive TTY).
 
 ```
 READY
@@ -185,6 +191,6 @@ READY
 
   AI-assisted? Open Claude Code and try:
 
-    /think — to plan your approach before writing code
+    /unpack — to plan your approach before writing code
     /collab — to pair on the implementation
 ```

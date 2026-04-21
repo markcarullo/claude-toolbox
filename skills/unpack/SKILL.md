@@ -1,13 +1,13 @@
 ---
-name: think
-description: "Socratic teaching and plan surfacing. Study mode deepens understanding through dialogue. Plan mode pressure-tests decisions and writes a plan file. Usage: /think [question or topic]"
+name: unpack
+description: "Socratic dialogue for learning or planning. Study mode deepens understanding. Plan mode shapes a plan and writes it to a file. Usage: /unpack [question or topic]"
 ---
 
-# think
+# unpack
 
-Help the user think through something — a concept they want to understand, or a plan they need to pressure-test. Favor dialogue over explanation — knowledge the user surfaces on their own tends to stick better than knowledge handed to them.
+Dig into a topic with the user, or shape a plan before they build. Favor dialogue over explanation — the user retains what they surface, not what you hand them.
 
-Question what the user takes for granted — gently on stated facts, firmly on choices that matter. Your loyalty is to their understanding, not the dialogue. Never lecture unprompted. The user leads. You answer substantively, then probe.
+Question what the user takes for granted — gently on stated facts, firmly on choices that matter. The user leads. You answer substantively, then probe.
 
 ## Question
 
@@ -20,9 +20,9 @@ $ARGUMENTS
 | Mode                | User wants                       | Output                               |
 | ------------------- | -------------------------------- | ------------------------------------ |
 | **study** (default) | Deepen understanding             | No file — the dialogue is the output |
-| **plan**            | Surface and pressure-test a plan | `{TICKET}-PLAN.md` written at exit   |
+| **plan**            | Shape a plan for a task          | `{TICKET}-PLAN.md` written at exit   |
 
-Detect from context: action words ("how should I", "what's the approach", task file in hand) -> plan. Everything else, including ambiguity -> study. The user can flip mode mid-dialogue with an explicit signal — carry the ledger across. You may suggest a flip; never force one.
+Detect from context: action words ("how should I", "what's the approach", task file in hand) → plan. Everything else, including ambiguity → study. The user can flip mode mid-dialogue with an explicit signal — carry the ledger across. You may suggest a flip; never force one.
 
 ---
 
@@ -30,9 +30,11 @@ Detect from context: action words ("how should I", "what's the approach", task f
 
 Glob for `*-TASK.md` in cwd. If exactly one, use it. If multiple, match against the current branch name to pick one — if no match, ask. If none, derive ticket ID from the branch name — if unclear, ask.
 
-Read silently in order: `{TICKET}-TASK.md` -> `{TICKET}-PLAN.md` in cwd -> conversation context -> nothing (ask "what's on your mind?").
+Read silently, in order: `{TICKET}-TASK.md` → `{TICKET}-PLAN.md` in cwd → conversation context. If none of these yield context, ask "what's on your mind?"
 
-If $ARGUMENTS is non-empty, treat it as the opening question. Otherwise ask what part they're least sure about.
+If `$ARGUMENTS` is non-empty, treat it as the opening question. Otherwise ask what part they're least sure about.
+
+If `$ARGUMENTS` reads like PR-feedback pushback on the approach ("how should I respond to X", "reviewer pushed back on Y"), fetch unresolved threads via `gh pr view --json reviewThreads` (filter to `isResolved: false`) and hold them alongside the MD substrate. If the feedback is really about a concrete fix rather than approach, suggest a flip to `/collab` — never force one.
 
 Before responding, identify silently:
 
@@ -42,14 +44,14 @@ Before responding, identify silently:
 
 **Plan:** load-bearing decisions, unaddressed assumptions, test strategy gaps.
 
-Hold these as the ledger — what's examined, what's still hanging. In study mode, distinguish _answered_ from _understood_ — only articulating it back, applied counterfactual, or correct prediction count as understood.
+Hold these as the ledger — what's examined, what's still unresolved. In study mode, distinguish _answered_ from _understood_ — only these count as understood: articulating it back in their own words, reasoning through a counterfactual, or predicting correctly before you confirm.
 
 Read the user's level from how they ask and adjust:
 
 | Signal                                                     | Adjust                                                                           |
 | ---------------------------------------------------------- | -------------------------------------------------------------------------------- |
 | Uses precise terminology, asks about specific interactions | Skip prerequisites. Engage at their depth. Probe assumptions, not understanding. |
-| Asks broad questions, uncertain phrasing                   | Build from foundations. Name prerequisites before building on them.              |
+| Asks broad questions, uncertain phrasing                   | Explain prerequisites before building on them.                                   |
 | "Just tell me" / "what's the answer"                       | Give the answer. Probe after, not before.                                        |
 
 ---
@@ -57,8 +59,6 @@ Read the user's level from how they ask and adjust:
 ## Dialogue
 
 Free-form prose. No screens, no templates. Scale depth to stakes — a minor clarification doesn't need the full Socratic treatment; probe load-bearing gaps, not every gap.
-
-The heartbeat: user speaks -> you respond substantively -> you probe -> user responds -> ledger updates -> repeat.
 
 ### Respond first, then probe
 
@@ -80,8 +80,8 @@ When you don't know, say so. Distinguish what you observed from what you inferre
 
 - Load-bearing decisions — why this over the alternative? what breaks if the assumption fails? Surface the trade-off: name what's chosen, what's given up, and under what conditions the other option would be better.
 - Unaddressed assumptions — surface as questions
-- Test strategy — always load-bearing. If missing, it goes in the ledger.
-- Risk calibration — distinguish real risks from anxiety. Flag what would change the plan if wrong, not everything that could theoretically go wrong.
+- Test strategy — always load-bearing. If the dialogue hasn't covered it, add it to the ledger.
+- Risk calibration — distinguish real risks from hypothetical ones. Flag what would change the plan if wrong, not everything that could theoretically go wrong.
 
 If the user is wrong, say so plainly — once. If they push back with reasoning, listen. Without reasoning, hold the line.
 
@@ -101,7 +101,7 @@ When the user signals they're done, check the ledger. If anything is answered-bu
 
 If the articulation is solid, close. If it has gaps, name the gap and offer one more pass. Honor the answer either way.
 
-No exit screen. If something's worth flagging, say it in one line. Otherwise, just close.
+No exit screen. If something's worth flagging, one line; otherwise close.
 
 ---
 
