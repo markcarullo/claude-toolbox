@@ -1,11 +1,14 @@
 ---
 name: examine
-description: "Pressure-test code or a plan through an adversarial loop. An Advocate defends the work, an Adversary attacks it. Outputs a recommendation or confirms it holds. Usage: /examine [what to examine]"
+description: "Pressure-test code or a plan through an adversarial loop. An Advocate defends the work, an Adversary attacks it. Outputs a recommendation, confirms it holds, or names what remains unresolved. Usage: /examine [what to examine]"
 ---
 
 # examine
 
-Pressure-test existing work through an Advocate/Adversary loop. Everything happens in memory — no files are changed. The output is a recommendation the user approves, a confirmation that the work holds, or a list of unresolved gaps.
+Pressure-test existing work via an Advocate/Adversary loop. In-memory only — no files change. Output: a recommendation, a confirmation it holds, or unresolved gaps.
+
+**Output style.** Minimize inline output — the loop's value is the outcome, not the play-by-play. One line per round, naming what was tested and what surfaced (or held). On exit, present the outcome and wait. No narration, no transitions, no preamble, no trailing recap.
+✓ `Adversary: step 3 assumes the migration is idempotent — not verified.`  ✗ `Let me now have the Adversary take a look. It seems to me that step 3 might be making an assumption about idempotency that we haven't really verified yet.`
 
 ## Target
 
@@ -13,27 +16,21 @@ $ARGUMENTS
 
 ---
 
-## How to work
-
-Work silently through the loop. Surface each round's findings inline. When the loop ends, present the outcome and wait for the user.
-
----
-
 ## On entry
 
 ### Detect the target
 
-If `$ARGUMENTS` names what to examine, classify it: design-shaped input (approach, sequencing, architecture) → plan mode; implementation-shaped input → code mode.
+If `$ARGUMENTS` names what to examine, classify: design-shaped (approach, sequencing, architecture) → plan mode; implementation-shaped → code mode.
 
 Otherwise detect in order:
 
-1. Glob for `*-PLAN.md` in cwd. If exactly one, use it → plan mode. If multiple, match against the current branch name to pick one — if no match, ask. If none, fall through.
-2. Staged changes or recently edited files → code mode
-3. Conversation context → infer from what's been discussed
+1. Glob `*-PLAN.md` in cwd. Exactly one → plan mode. Multiple → match against branch name; no match, ask. None → fall through.
+2. Staged changes or recently edited files → code mode.
+3. Conversation context → infer from what's been discussed.
 
 If nothing is clear, ask: "What are we examining?"
 
-Read the target before starting. Hold internally: what it does, what it assumes, what's load-bearing.
+Read the target before starting. Hold: what it does, what it assumes, what's load-bearing.
 
 ---
 
@@ -41,19 +38,19 @@ Read the target before starting. Hold internally: what it does, what it assumes,
 
 ### Advocate
 
-Defends the work. Studies what exists, builds the strongest possible case — what's sound, what's defensible. Ground the defense in the actual code or plan, not in what it imagines the author intended. When the Adversary critiques, _defend before conceding_ — articulate why something is sound. If the defense holds, the Adversary must break it, not just reassert. Concede only what cannot be defended.
+Defends the work. Studies what exists, builds the strongest case — what's sound, what's defensible. Ground the defense in the actual code or plan, not a guess at what the author intended. When the Adversary critiques, _defend before conceding_ — articulate why something is sound. If the defense holds, the Adversary must break it, not just reassert. Concede only what cannot be defended.
 
 Round 2+: revise only what was genuinely lost. State what changed and why. If the critique points to a structural problem, propose restructuring — don't paper over it.
 
 ### Adversary
 
-Attacks the work. Assumes it fails until the Advocate proves otherwise. Ground challenges in evidence — what the code actually does, what the tests actually cover, what the plan actually assumes. Hypothetical risks that can't be traced to the target are noise, not findings.
+Attacks the work. Assumes it fails until the Advocate proves otherwise. Ground challenges in evidence — what the code actually does, what tests actually cover, what the plan actually assumes. Hypotheticals that can't be traced to the target are noise, not findings.
 
-Each round: cross-examine the Advocate's case, surface gaps, state what's unresolved. Pass critique verbatim to the next round — never soften it.
+Each round: cross-examine the Advocate's case, surface gaps, state what's unresolved. Pass critique verbatim to the next round — never soften.
 
-Round 2+: go _deeper_, not wider. Scrutinize the revisions and the structure underneath — do not scan for more surface nits. New surface findings after round 1 are a smell. If genuinely nothing deeper exists, state so and explain why.
+Round 2+: go _deeper_, not wider. Scrutinize the revisions and the structure underneath — don't scan for more surface nits. New surface findings after round 1 are a smell. If genuinely nothing deeper exists, say so and explain why.
 
-**Carry the trajectory.** Track the thread across rounds. If a revision drifts from the trajectory of improvement — flattening a symptom instead of fixing the structure, or staying locked in the original frame when a different shape would be better — that's a finding.
+**Watch how revisions move.** The shape of the revisions is itself evidence. If one patches a symptom instead of fixing structure, stays locked in the original frame when a different shape fits better, or converges cleanly on something never pressure-tested — that drift is a finding.
 
 ---
 
@@ -65,9 +62,9 @@ Round 2+: go _deeper_, not wider. Scrutinize the revisions and the structure und
 
 ### Exhibits (code mode only)
 
-Run what the project has configured before each round: type check, lint, tests. Exhibit failures are facts — the Advocate concedes them without argument.
+Run what the project has configured before each round: type check, lint, tests. Exhibit failures are facts — the Advocate concedes without argument.
 
-Do not install tools or add config. If nothing is configured, skip and note it.
+Don't install tools. Don't add config. If nothing is configured, skip and note it.
 
 ---
 
@@ -99,13 +96,13 @@ The Adversary reads the target before round 1 and picks where to start:
 
 1. Advocate revises only what was genuinely lost. States what changed and why.
 2. Rerun exhibits (code mode).
-3. Adversary drops one altitude deeper — from frame to structure, from structure to detail. Scrutinize the revisions at this new depth.
+3. Adversary drops one altitude deeper — frame to structure, structure to detail — and scrutinizes the revisions at this new depth.
 
 ### When the loop ends
 
 The loop ends when any of these is true:
 
-- **Nothing to examine** — Adversary finds nothing load-bearing in round 1. Exit early.
+- **Nothing to examine** — Adversary finds nothing load-bearing in round 1, after genuinely pressure-testing at the calibrated altitude. Unexamined absence is not genuine absence.
 - **Converged** — gaps resolved, no new ones emerge. If the Advocate revised, the revisions form the recommendation. If not, the work holds as-is.
 - **Did not converge** — 3 rounds exhausted, load-bearing gaps remain unresolved.
 
@@ -135,6 +132,8 @@ Here's what I'd change.
 Apply, adjust, or discard?
 ```
 
+Apply → hand off to the user to integrate (the skill never writes). Adjust → user names what's off, re-present. Discard → close.
+
 ### Did not converge
 
 ```
@@ -147,9 +146,9 @@ This needs rethinking.
 
 ## Guardrails
 
-- **Never write to files during the loop.** Everything stays in memory until the user approves.
+- **No writes during the loop.** In-memory until the user approves.
 - **Never soften the Adversary.**
 - **Never inflate findings.** If the work is solid, say so.
 - **Exhibit failures are not negotiable.** Red tests, type errors, lint errors — concede, don't argue.
-- **Distinguish observed from inferred from guessed.** "I see X" / "this suggests Y" / "guessing — worth checking."
-- **Adapt to conventions.** Follow codebase patterns visible in the target and CLAUDE.md if present.
+- **Observed / inferred / guessed.** "I see X" / "this suggests Y" / "guessing — worth checking."
+- **Follow conventions.** Codebase patterns visible in the target and CLAUDE.md if present.

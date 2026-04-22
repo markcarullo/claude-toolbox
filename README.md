@@ -1,21 +1,21 @@
 # claude-toolbox
 
-Claude Code skills that take you from a JIRA ticket to a merged PR.
+Claude Code skills that take you from a JIRA ticket to an open PR.
 
-Each stage has its own gate, skills hand off context through files, and they pick up your project's conventions along the way.
+Each stage is its own skill, with a gate you control. Skills hand off context through files in your working directory and pick up your project's conventions from `CLAUDE.md`.
 
 ## Skills
 
-| Skill        | Description                                                                             |
-| ------------ | --------------------------------------------------------------------------------------- |
-| `/start`     | Fetch a JIRA ticket, scope it against the codebase, set up a workspace with a task file |
-| `/unpack`    | Socratic study mode or plan mode — dig into a topic or shape a plan through dialogue    |
-| `/collab`    | Collaborative coding partner that calibrates from a nudge to taking the keyboard        |
-| `/examine`   | Adversarial Advocate/Adversary loop to pressure-test code or a plan                     |
-| `/ship`      | Run checks, verify AC, draft commit and PR, ship with approval at each gate             |
-| `/peer`      | Review a teammate's PR — understand it, surface strengths and weaknesses                |
+| Skill      | Description                                                                         |
+| ---------- | ----------------------------------------------------------------------------------- |
+| `/start`   | Fetches a JIRA ticket, scopes it, sets up a worktree or branch with a task file     |
+| `/unpack`  | Runs a Socratic dialogue — studies a topic, or shapes a plan and writes it to a file |
+| `/collab`  | Pairs on the implementation, calibrating from a nudge to taking the keyboard        |
+| `/examine` | Runs an Advocate/Adversary loop to pressure-test code or a plan                     |
+| `/ship`    | Runs checks, verifies AC, drafts the commit (and PR if pushing), gates each write   |
+| `/peer`    | Reviews a teammate's PR — never writes to GitHub                                    |
 
-### Workflow
+## Workflow
 
 ```
 /start <ticket>     Pick up a ticket, set up the workspace
@@ -26,28 +26,28 @@ Each stage has its own gate, skills hand off context through files, and they pic
         ↓
 /examine            Pressure-test before shipping
         ↓
-/ship               Checks, commit, PR
+/ship               Checks, commit, push, PR handoff
 
 /peer <PR>          Review someone else's work
 ```
 
-The diagram shows the full sequence, but `/unpack`, `/collab`, and `/examine` also work independently — you don't need a ticket to use them.
+The diagram shows the full path, but `/unpack`, `/collab`, and `/examine` work on their own — no ticket needed.
 
 ### How the skills connect
 
-The skills pass context through files in the working directory:
+Skills share context through two files in the working directory:
 
-- `/start` spins up a worktree or branch, primed with `{TICKET}-TASK.md` — ticket summary, AC, starting points
+- `/start` writes `{TICKET}-TASK.md` — ticket summary, AC, starting points
 - `/unpack` reads the task file; in plan mode, writes `{TICKET}-PLAN.md` — approach, steps, assumptions
-- `/collab` and `/ship` read both files for context
-- `/examine` reads the plan file, or targets whatever you point it at
-- `/ship` excludes task and plan files from commits automatically
+- `/collab` reads both files for context
+- `/examine` reads the plan file by default, or auto-detects from staged changes and conversation
+- `/ship` reads the task file to verify AC, and keeps both files out of commits
 
-If your project has a `CLAUDE.md`, the skills adapt to its conventions (branch naming, commit style, PR templates, test commands, codebase patterns).
+If your repo has a `CLAUDE.md`, skills follow the conventions it documents — branch naming, commit style, PR template, test commands, codebase patterns.
 
 ## What it looks like
 
-`/start` scopes the ticket and presents a summary before setting up the workspace:
+`/start` presents a scoped summary before setting up the workspace:
 
 ```
 TICKET     PROJ-1234: Fix stale cache on dashboard refresh
@@ -63,31 +63,31 @@ LEADS      2
 [1] GO    [2] REVIEW BRIEF    [3] REJECT
 ```
 
-`/ship` maps each acceptance criterion to diff evidence before drafting the PR:
+`/ship` maps each acceptance criterion to the diff before drafting the commit message:
 
 ```
-AC VERIFICATION
-
-✓  Cache invalidated on manual refresh → src/cache.ts: added invalidate() call in refresh handler
-✓  Dashboard shows fresh data after reload → src/dashboard.ts: polling resets after invalidation
-~  Loading indicator during refresh → partial — spinner added but no error state
+✓  Cache invalidated on manual refresh
+   → src/cache.ts: invalidate() call added in refresh handler
+✓  Dashboard shows fresh data after reload
+   → src/dashboard.ts: polling resets after invalidation
+~  Loading indicator during refresh
+   → partial: spinner added, no error state
 ```
 
 ## Prerequisites
 
 - [Claude Code](https://docs.anthropic.com/en/docs/claude-code) or Claude Desktop
-- [Atlassian MCP](https://marketplace.anthropic.com/) — connect via the Anthropic marketplace. JIRA-first by design.
-  `/start` uses it to fetch tickets; `/peer` can use it to look up linked tickets.
-- [GitHub CLI](https://cli.github.com/) (`gh`) installed and authenticated (for `/ship` and `/peer`)
+- [Atlassian MCP](https://marketplace.anthropic.com/) — connect via the Anthropic marketplace. `/start` uses it to fetch tickets; `/peer` uses it to look up linked tickets.
+- [GitHub CLI](https://cli.github.com/) (`gh`) — installed and authenticated. Required by `/ship` and `/peer`. `/collab` uses it to surface open PR comments; skips silently if absent.
 
 ## Assumptions
 
-- The skills assume the working directory is a git repository hosted on **GitHub**. `/ship` and `/peer` shell out to `gh` for PR creation and review — other hosts (GitLab, Bitbucket) are not supported.
-- `/start` assumes [VS Code](https://code.visualstudio.com/) (`code` CLI) to open the workspace. Adapt if you use a different editor.
+- The working directory is a git repository on **GitHub**. `/ship` and `/peer` shell out to `gh`; GitLab and Bitbucket aren't supported.
+- `/start` opens the workspace in [VS Code](https://code.visualstudio.com/) via the `code` CLI. Adapt or skip if you use a different editor.
 
 ## Installation
 
-Copy the skills into your `~/.claude/` directory:
+From the repo root:
 
 ```bash
 mkdir -p ~/.claude/skills

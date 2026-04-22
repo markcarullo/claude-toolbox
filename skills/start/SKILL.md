@@ -1,13 +1,16 @@
 ---
 name: start
-description: "Fetch a JIRA ticket, scope it against the codebase, fill gaps with the user, then set up a workspace with a task file. Usage: /start PROJ-1234"
+description: "Turn a JIRA ticket into an oriented brief, scope it against the codebase, fill gaps with the user, then set up a workspace with a task file. Usage: /start PROJ-1234"
 ---
 
 # start
 
-Turn a JIRA ticket into a brief sharp enough to act on, and set up the workspace.
+Orient the user, then set up the workspace. The brief is the artifact — aim well enough that downstream skills have a solid start.
 
-Collaborate on ambiguity rather than guessing. Do not skip steps or proceed past a blocking failure without user input.
+Collaborate on ambiguity rather than guessing. Stay grounded in what's given — ticket text and a light scan — not speculation. Don't skip steps or proceed past a blocking failure without user input.
+
+**Output style.** Terse and front-loaded for status chatter (intake, self-review, summary screen, launch). TASK.md content stays prose — it's a durable artifact the user re-reads. No preamble, no trailing recap.
+✓ `PROJ-1234 fetched (Bug, 3 ACs). Leads: src/cache.ts, src/dashboard.ts.`  ✗ `I've successfully fetched the ticket PROJ-1234. It has 3 acceptance criteria and I found 2 leads. We're ready to proceed.`
 
 ## Ticket
 
@@ -17,7 +20,7 @@ $ARGUMENTS
 
 ## How to work
 
-Ask questions plainly when blocked — no special prompt formatting. For choices, use numbered options. One question at a time.
+Ask plainly when blocked — no special prompt formatting. Numbered options for choices. One question at a time.
 
 ---
 
@@ -25,36 +28,38 @@ Ask questions plainly when blocked — no special prompt formatting. For choices
 
 ### Repo guard
 
-Run `git rev-parse --is-inside-work-tree`. If it fails, ask for an absolute path to a repo. Then check `git status` — fail on mid-merge/mid-rebase/unresolved conflicts before any ticket work begins.
+Run `git rev-parse --is-inside-work-tree`. On failure, ask for an absolute path to a repo. Then `git status` — fail on mid-merge, mid-rebase, or unresolved conflicts before any ticket work begins.
 
 ### Fetch the ticket
 
-If no ticket ID is provided, ask. Use the Atlassian MCP. If the MCP requires a cloudId, fetch it first via `getAccessibleAtlassianResources`.
+If no ticket ID, ask. Use the Atlassian MCP. If the MCP requires a cloudId, fetch first via `getAccessibleAtlassianResources`.
 
-**Fetch core fields first:** title, type, description, AC, and repro/expected/actual for bugs. Fetch links, parent epic, attachments, and comments only on demand — when the ticket body references them or the self-review flags a gap they'd close. Otherwise note "not fetched."
+**Core fields first:** title, type, description, AC, plus repro/expected/actual for bugs. Fetch links, parent epic, attachments, and comments only on demand — when the ticket body references them or self-review flags a gap they'd close. Otherwise note "not fetched."
 
 On fetch failure, ask for a corrected ticket ID or pasted content.
 
 ### Read CLAUDE.md _(parallel with ticket fetch)_
 
-Read repo-root `CLAUDE.md` if present. Extract branch naming, test commands, framework hints, conventions. Proceed without it if absent.
+Read repo-root `CLAUDE.md` if present. Extract branch naming, test commands, framework hints, conventions. Proceed without if absent.
 
 ### Light code scan _(parallel with ticket fetch)_
 
 Orient only — no deep file reading.
 
-- Skim directory / package layout
-- Note test framework and nearby spec patterns
+- Skim directory / package layout.
+- Note test framework and nearby spec patterns.
+- Surface if the code points somewhere the ticket doesn't.
 
 ### Validate workability _(needs ticket body)_
 
 Stop at the first gap that would block a developer. The bar:
 
-- Description present
-- AC concrete and verifiable (sharpen vague ones)
-- Repro steps realistic (bugs only)
-- Dependencies named
-- Scope coherent — no two equally valid interpretations
+- **Framing coherent** — names the actual problem, not a symptom or a pre-baked solution.
+- **Description** present.
+- **AC** concrete and verifiable (sharpen vague ones).
+- **Repro steps** realistic (bugs only).
+- **Dependencies** named.
+- **Scope coherent** — no two equally valid interpretations.
 
 Collaborate to resolve before continuing.
 
@@ -66,13 +71,15 @@ Produce **2-3 best leads** — each a candidate with a one-line "why," not an as
 
 ### Branch name
 
-Derive from CLAUDE.md convention. Slug: lowercase, hyphenated, no articles/conjunctions/punctuation, max 40 chars. Always derive, never ask (unless no convention exists — then ask once).
+Derive from CLAUDE.md convention. Slug: lowercase, hyphenated, no articles or conjunctions, no punctuation, max 40 chars. Always derive, never ask — unless no convention exists, then ask once.
 
 ---
 
 ## Self-review
 
-Silent. Walk the brief against: AC coverage, AC verifiability, repro steps (bugs), blocking ambiguities, scope coherence, starting point plausibility. On gaps: ask one round only, max 2 questions (most load-bearing). Anything still unresolved goes in Open Questions.
+Silent. Walk the brief against: AC coverage, AC verifiability, repro steps (bugs), blocking ambiguities, scope coherence, framing coherence, starting point plausibility. On gaps: one round only, max 2 questions (most load-bearing). Anything still unresolved goes in Open Questions.
+
+If the user already has a read — a hypothesis, a scope instinct — weave it in rather than overwrite. Name where you diverge. Don't solicit a hypothesis they haven't offered.
 
 ---
 
@@ -94,9 +101,9 @@ GAPS       {one per line — what's unresolved and why it matters}
 [1] GO    [2] REVIEW BRIEF    [3] REJECT
 ```
 
-- `[1] GO` — proceed to launch
-- `[2] REVIEW BRIEF` — render task file draft inline, then: `[1] GO  [2] REVISE  [3] CANCEL`
-- `[3] REJECT` — ask targeted questions, revise, re-render
+- `[1] GO` — proceed to launch.
+- `[2] REVIEW BRIEF` — render task file draft inline. Flag the part where the user's judgment matters most (usually LEADS — a hypothesis, not a verdict), then: `[1] GO  [2] REVISE  [3] CANCEL`. `REVISE` → ask what's off, re-render. `CANCEL` → back to summary.
+- `[3] REJECT` — ask targeted questions, revise, re-render.
 
 ---
 
@@ -157,7 +164,7 @@ Scale to the ticket's complexity — simple tickets get core sections only; comp
 
 ### Preflight
 
-Check for `code` CLI (`which code`) — warn if missing but continue.
+Check for `code` CLI (`which code`). Warn if missing but continue.
 
 ### Worktree or branch?
 
@@ -165,7 +172,7 @@ Ask: `[1] BRANCH (branch in current repo)  [2] WORKTREE (isolated folder + branc
 
 ### Create
 
-Check for existing branch/worktree first. Reuse if found.
+Check for an existing branch or worktree first. Reuse if found — omit `-b` when attaching a worktree to an existing branch.
 
 **Worktree:** `git worktree add "../worktrees/{TICKET}" -b "{branch}"`
 **Branch only:** `git checkout -b "{branch}"`
@@ -174,9 +181,11 @@ Check for existing branch/worktree first. Reuse if found.
 
 **Worktree:** `../worktrees/{TICKET}/{TICKET}-TASK.md` | **Branch only:** `./{TICKET}-TASK.md`
 
+If the file already exists, ask: overwrite / keep the existing one / abort.
+
 ### Open VS Code and print exit
 
-Open the workspace: `code {worktree path, or repo root}`. Skip if `code` was missing in preflight. Do not run `claude` via shell (requires interactive TTY).
+Open the workspace: `code {worktree path, or repo root}`. Skip if `code` was missing in preflight. Don't run `claude` via shell — it requires an interactive TTY.
 
 ```
 READY
@@ -184,10 +193,9 @@ READY
   Branch   {branch}
   Worktree ../worktrees/{TICKET}    (if applicable)
   {TICKET}-TASK.md  written
-  VS Code  opening
+  VS Code  {opening / skipped — open manually: {path}}
 
-  Solo? Open the TASK file and start with the
-  Starting Points.
+  Solo? Open the TASK file, start at Starting Points.
 
   AI-assisted? Open Claude Code and try:
 
