@@ -7,19 +7,8 @@ description: "Ship the change. Run lint + relevant tests, verify AC if a task fi
 
 Check, draft, gate the writes up to push, hand off the next step.
 
-**Output style.** Terse, front-loaded, skimmable. Bullets and tables over prose. Full sentences only where precision demands. No preamble, no trailing recap.
+**Voice.** Terse, front-loaded, skimmable. Bullets and tables over prose. Numbered options for blocking asks (`[1] X  [2] Y  [3] Z`). Clickable file refs when surfacing findings (`[auth.ts:42](src/auth.ts#L42)`). Full sentences only where precision demands. No preamble, no trailing recap. Distinguish observed / inferred / guessed — AC verdicts in particular: ✓/~/✗ from a diff skim is inference, not proof. Say so when uncertain rather than ossifying a guess as a verdict.
 ✓ `Staged 4 files. Commit as "PROJ-1234: invalidate cache"?`  ✗ `I've staged 4 files for you. Would you like me to proceed with the commit?`
-
-## At a glance
-
-Two paths, chosen at Scope: **path 1** = commit only; **path 2** = commit + push. Path 2 splits again at handoff based on whether preflight found an existing PR.
-
-- **Reads only** — preflight, checks, AC. Flow through; findings surface at the review gate. Preflight stops hard on a dirty tree, no changes, secrets, or a protected branch.
-- **Asks once** — scope (path 1 or path 2). Default: path 1.
-- **Review gate** — findings + commit message + PR description (if new PR). User revises any piece.
-- **Per write** — commit, push. Each: run / manual / stop.
-- **Handoff** — push command (path 1), existing PR URL (path 2 follow-up), or PR description + creation URL (path 2 new PR).
-- **Never** — force-push, `--no-verify`, commits of `.env` or task/plan files, silent commits to a protected branch.
 
 ---
 
@@ -30,11 +19,11 @@ Silent unless blocked.
 - `git status` + `git diff HEAD` + `git diff --cached`. Stop if: not a repo, mid-merge/rebase, unresolved conflicts, or no changes.
 - Read `CLAUDE.md` if present — commit convention, PR template, base branch, branch naming.
 - Base branch: `CLAUDE.md` → `gh repo view --json defaultBranchRef -q .defaultBranchRef.name` → `main` if the ref exists, else `master`.
-- Read `*-TASK.md` if there's exactly one in cwd, or one matching the branch. Don't hunt further.
+- Read `*-TASK.md`: exactly one in cwd → use it. Multiple → match against branch name; one match wins, otherwise ask with numbered options plus `[N] None` to skip. None → skip AC verification silently. Don't hunt further.
 - **Existing PR:** `gh pr list --head {branch} --state open --json url,number`. One result → follow-up (skip the PR-description draft; use that URL for the path 2 handoff). Zero, multiple, or any error → new PR.
-- **Secret check:** if the diff includes `.env`, `.env.*`, or obvious credential patterns, stop and ask.
+- **Secret check:** if the diff includes `.env`, `.env.*`, or obvious credential patterns, stop and ask `[1] Exclude and continue  [2] Commit anyway  [3] Abort`.
 - **Debug leftovers:** flag any new `console.log`, `print(`, `debugger`, `TODO`, `FIXME`, or `HACK` as a finding. Doesn't block.
-- **Protected branch:** if the current branch equals the base (or CLAUDE.md marks it protected), stop and ask — create a branch now / proceed anyway / abort.
+- **Protected branch:** if the current branch equals the base (or CLAUDE.md marks it protected), stop and ask `[1] Create a branch now  [2] Proceed anyway  [3] Abort`.
 
 ---
 
@@ -55,14 +44,13 @@ Failures surface as findings at the review gate; they don't block.
 
 _Skip if no task file was read in preflight._ One-line verdict per AC from a diff skim: **✓ met** / **~ partial** / **✗ unmet**. Unmet and partial ACs surface as findings.
 
+If most ACs come back ✗ unmet but the diff is substantive and coherent, suspect a stale TASK — the user may have moved past the original AC list. Surface as a finding: `Possible stale TASK — N ACs unmet but the diff looks like deliberate, finished work.` At the review gate, the user approves to ship anyway (Known Issues notes the divergence) or aborts to update the TASK file outside `/ship`.
+
 ---
 
 ## Scope
 
-Ask which:
-
-1. Commit only (path 1)  _(default)_
-2. Commit + push (path 2)
+Ask `[1] Commit only  [2] Commit + push`. Default `[1]`.
 
 ---
 
@@ -82,24 +70,24 @@ If `.github/PULL_REQUEST_TEMPLATE.md` exists, follow its structure instead. Add 
 
 ### Review gate
 
-Show findings first (failed checks, unmet/partial AC — empty if none), then the commit message, then the PR description if path 2 and a new PR. Ask:
+Show findings first (failed checks, unmet/partial AC — empty if none), then the commit message, then the PR description if path 2 and a new PR. Ask `[1] Approve  [2] Revise  [3] Fix findings first  [4] Abort`.
 
-1. Approve — continue to Ship
-2. Revise — user names the piece (message, description, scope); re-draft and return to the gate
-3. Fix findings first — re-run /ship when ready
-4. Abort
+- **Approve** — continue to Ship.
+- **Revise** — user names the piece (message, description, scope); re-draft and return to the gate.
+- **Fix findings first** — re-run `/ship` when ready.
+- **Abort** — close.
 
 ---
 
 ## Ship
 
-Gates run in order: commit, then push (path 2 only). At each gate:
+Gates run in order: commit, then push (path 2 only). At each gate, ask `[1] Run  [2] Manual  [3] Stop`:
 
-1. Run it
-2. Manual — print the exact command; wait for the user to confirm
-3. Stop
+- **Run** — execute the command.
+- **Manual** — print the exact command; wait for the user to confirm.
+- **Stop** — abort. State leaves as-is.
 
-On any write failure, surface git's error verbatim and ask: retry / manual / stop. Never `--no-verify`; never force-push.
+On any write failure, surface git's error verbatim and ask `[1] Retry  [2] Manual  [3] Stop`. Never `--no-verify`; never force-push.
 
 ### 1. Commit
 

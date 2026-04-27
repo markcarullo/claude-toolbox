@@ -9,7 +9,7 @@ Orient the user, then set up the workspace. The brief is the artifact — aim we
 
 Collaborate on ambiguity rather than guessing. Stay grounded in what's given — ticket text and a light scan — not speculation. Don't skip steps or proceed past a blocking failure without user input.
 
-**Output style.** Terse and front-loaded for status chatter (intake, self-review, summary screen, launch). TASK.md content stays prose — it's a durable artifact the user re-reads. No preamble, no trailing recap.
+**Voice.** Terse and front-loaded for status chatter (intake, self-review, summary screen, launch). Bullets and tables for multi-item content (leads, gaps, AC). Numbered options for choices (`[1] X  [2] Y  [3] Z`). Clickable file refs in chat (`[cache.ts:42](src/cache.ts#L42)`); TASK.md keeps plain backtick paths. No preamble, no trailing recap. Distinguish observed / inferred / guessed — leads especially: a grep hit is observed, a "this is probably where it lives" is inferred, and unverified hunches stay flagged so the brief doesn't ossify them as fact.
 ✓ `PROJ-1234 fetched (Bug, 3 ACs). Leads: src/cache.ts, src/dashboard.ts.`  ✗ `I've successfully fetched the ticket PROJ-1234. It has 3 acceptance criteria and I found 2 leads. We're ready to proceed.`
 
 ## Ticket
@@ -20,7 +20,7 @@ $ARGUMENTS
 
 ## How to work
 
-Ask plainly when blocked — no special prompt formatting. Numbered options for choices. One question at a time.
+Ask plainly when blocked — no special prompt formatting. One question at a time.
 
 ---
 
@@ -71,15 +71,34 @@ Produce **2-3 best leads** — each a candidate with a one-line "why," not an as
 
 ### Branch name
 
-Derive from CLAUDE.md convention. Slug: lowercase, hyphenated, no articles or conjunctions, no punctuation, max 40 chars. Always derive, never ask — unless no convention exists, then ask once.
+Derive from CLAUDE.md convention. Slug: lowercase, hyphenated, no articles or conjunctions, max 40 chars. Always derive, never ask — unless no convention exists, then ask once.
 
 ---
 
 ## Self-review
 
-Silent. Walk the brief against: AC coverage, AC verifiability, repro steps (bugs), blocking ambiguities, scope coherence, framing coherence, starting point plausibility. On gaps: one round only, max 2 questions (most load-bearing). Anything still unresolved goes in Open Questions.
+Silent. Walk the brief against:
+
+- AC coverage
+- AC verifiability
+- Repro steps (bugs)
+- Blocking ambiguities
+- Scope coherence
+- Framing coherence
+- Starting point plausibility
+
+On gaps: one round only, max 2 questions (most load-bearing). Anything still unresolved goes in Open Questions.
 
 If the user already has a read — a hypothesis, a scope instinct — weave it in rather than overwrite. Name where you diverge. Don't solicit a hypothesis they haven't offered.
+
+### Calibrate brief depth
+
+Read the user's familiarity from `$ARGUMENTS` and the ticket framing, then shape the summary:
+
+| Signal                                                          | Adjust                                                                                  |
+| --------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| `$ARGUMENTS` names files, modules, or a concrete hypothesis     | Tight summary. Skip orientation. Leads acknowledge the user's read first, add what's missing. |
+| New area, broad ticket, no hypothesis offered                   | Fuller summary. Helpful Context expanded. Leads as candidates with one-line "why."      |
 
 ---
 
@@ -98,7 +117,7 @@ LEADS      {N}
 {If gaps remain from self-review:}
 GAPS       {one per line — what's unresolved and why it matters}
 
-[1] GO    [2] REVIEW BRIEF    [3] REJECT
+[1] GO  [2] REVIEW BRIEF  [3] REJECT
 ```
 
 - `[1] GO` — proceed to launch.
@@ -137,17 +156,19 @@ Scale to the ticket's complexity — simple tickets get core sections only; comp
 **Expected:** {what should happen, and why}
 **Actual:** {what happens instead, and the impact}
 
-## Starting Points
+## Leads
 
 {2-3 best leads with one-line "why" — hypothesis, not verdict.}
 
 - `path/to/file` — {why this is a candidate}
-- **Test:** `{command}` · **Nearest specs:** `{paths}`
+
+## How to Test
+
+- **Test command:** `{from package.json or CLAUDE.md}`
+- **Nearest specs:** `{paths to existing tests near the leads}`
 
 ## Helpful Context _(complex tickets only)_
 
-- **Test command:** {from package.json or CLAUDE.md}
-- **Test framework + specs nearest the starting points:** {...}
 - **Framework hints:** {from CLAUDE.md, e.g. "React — components in src/components/"}
 - **Feature flags / env vars mentioned:** {..., or "None"}
 - **Linked tickets:** {TICKET — title — status — link type}
@@ -195,7 +216,7 @@ READY
   {TICKET}-TASK.md  written
   VS Code  {opening / skipped — open manually: {path}}
 
-  Solo? Open the TASK file, start at Starting Points.
+  Solo? Open the TASK file, start at Leads.
 
   AI-assisted? Open Claude Code and try:
 

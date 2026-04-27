@@ -7,7 +7,7 @@ description: "Pressure-test code or a plan through an adversarial loop. An Advoc
 
 Pressure-test existing work via an Advocate/Adversary loop. In-memory only — no files change. Output: a recommendation, a confirmation it holds, or unresolved gaps.
 
-**Output style.** Minimize inline output — the loop's value is the outcome, not the play-by-play. One line per round, naming what was tested and what surfaced (or held). On exit, present the outcome and wait. No narration, no transitions, no preamble, no trailing recap.
+**Voice.** Minimize inline output — the loop's value is the outcome, not the play-by-play. One line per round, naming what was tested and what surfaced (or held). Bullets when multiple findings surface in a round. Numbered options for discrete asks like the outcome screen (`[1] X  [2] Y  [3] Z`); open-ended asks stay prose. Clickable file refs into the target (`[migration.ts:42](src/migration.ts#L42)`). On exit, present the outcome and wait. No narration, no transitions, no preamble, no trailing recap.
 ✓ `Adversary: step 3 assumes the migration is idempotent — not verified.`  ✗ `Let me now have the Adversary take a look. It seems to me that step 3 might be making an assumption about idempotency that we haven't really verified yet.`
 
 ## Target
@@ -24,13 +24,15 @@ If `$ARGUMENTS` names what to examine, classify: design-shaped (approach, sequen
 
 Otherwise detect in order:
 
-1. Glob `*-PLAN.md` in cwd. Exactly one → plan mode. Multiple → match against branch name; no match, ask. None → fall through.
+1. Glob `*-PLAN.md` in cwd. Exactly one → plan mode. Multiple → match against branch name; one match wins, otherwise ask with numbered options. None → fall through.
 2. Staged changes or recently edited files → code mode.
 3. Conversation context → infer from what's been discussed.
 
 If nothing is clear, ask: "What are we examining?"
 
 Read the target before starting. Hold: what it does, what it assumes, what's load-bearing.
+
+**Plan mode — reconcile before the loop.** Glance at `git status` and recent commits. If the working tree has already moved past parts of the plan, surface it once: `Plan covers steps 1-5; commits show 1-3 landed. Examine the rest, or the whole plan?` A pressure-test of an already-executed step is cheap noise — examine what's still ahead unless the user wants the full sweep.
 
 ---
 
@@ -84,6 +86,14 @@ The Adversary reads the target before round 1 and picks where to start:
 | Medium scope, touches shared code       | Brief frame check (right place, right pattern?), then depth |
 | Large, architectural, high blast radius | Frame — is this the right approach at all?                  |
 
+Then read the user's posture from `$ARGUMENTS`:
+
+| Signal                                                       | Adjust                                                                                |
+| ------------------------------------------------------------ | ------------------------------------------------------------------------------------- |
+| User names a specific concern ("does X handle Y?")           | Adversary opens at that concern. Other altitudes still get one pass, but lighter.     |
+| User asks generally to pressure-test                         | Use the altitude table above; build up from the calibrated start.                     |
+| User says "make sure this is solid" / sounds confident       | Adversary opens hot — assume defended ground exists; force the Advocate to prove it.  |
+
 ### Rounds
 
 **Round 1:**
@@ -129,10 +139,12 @@ Here's what I'd change.
 
 {summary + revised output — plan text, code block, or diff}
 
-Apply, adjust, or discard?
+[1] Apply  [2] Adjust  [3] Discard
 ```
 
-Apply → hand off to the user to integrate (the skill never writes). Adjust → user names what's off, re-present. Discard → close.
+- **Apply** — hand off to the user to integrate (the skill never writes).
+- **Adjust** — user names what's off, re-present.
+- **Discard** — close.
 
 ### Did not converge
 
