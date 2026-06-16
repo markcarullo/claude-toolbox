@@ -1,13 +1,13 @@
 ---
 name: examine
-description: "Pressure-test code or a plan through an adversarial loop. An Advocate defends the work, an Adversary attacks it. Outputs a recommendation, confirms it holds, or names what remains unresolved. Usage: /examine [what to examine]"
+description: "Pressure-test code, a plan, or an asserting artifact (skill, doc, handover) through an adversarial loop. An Advocate defends the work, an Adversary attacks it. Outputs a recommendation, confirms it holds, or names what remains unresolved. Usage: /examine [what to examine]"
 ---
 
 # examine
 
 Pressure-test existing work via an Advocate/Adversary loop. In-memory only — no files change. Output: a recommendation, a confirmation it holds, or unresolved gaps.
 
-**Voice.** Minimize inline output — the loop's value is the outcome, not the play-by-play. One line per round, naming what was tested and what surfaced (or held). Bullets when multiple findings surface in a round. Numbered options for discrete asks like the outcome screen (`[1] X  [2] Y  [3] Z`); open-ended asks stay prose. Clickable file refs into the target (`[migration.ts:42](src/migration.ts#L42)`). On exit, present the outcome and wait. No narration, no transitions, no preamble, no trailing recap.
+**Voice.** Minimize inline output — the value is the outcome, not the play-by-play. One line per round, naming what was tested and what surfaced (or held). Bullets when multiple findings surface. Numbered options for fast-loop discrete asks like the outcome screen (`[1] X  [2] Y  [3] Z`); `AskUserQuestion` for destructive picks, ambiguous labels, or comparable previews; open-ended asks stay prose. Clickable file refs into the target (`[migration.ts:42](src/migration.ts#L42)`). On exit, present the outcome and wait. No narration, no transitions, no preamble, no trailing recap.
 ✓ `Adversary: step 3 assumes the migration is idempotent — not verified.`  ✗ `Let me now have the Adversary take a look. It seems to me that step 3 might be making an assumption about idempotency that we haven't really verified yet.`
 
 ## Target
@@ -20,19 +20,20 @@ $ARGUMENTS
 
 ### Detect the target
 
-If `$ARGUMENTS` names what to examine, classify: design-shaped (approach, sequencing, architecture) → plan mode; implementation-shaped → code mode.
+If `$ARGUMENTS` names what to examine, classify: design-shaped (approach, sequencing, architecture) → plan mode; implementation-shaped → code mode; assertion-shaped (skills, docs, handovers, READMEs — text that *asserts* rather than proposes or executes) → audit mode.
 
 Otherwise detect in order:
 
 1. Glob `*-PLAN.md` in cwd. Exactly one → plan mode. Multiple → match against branch name; one match wins, otherwise ask with numbered options. None → fall through.
 2. Staged changes or recently edited files → code mode.
-3. Conversation context → infer from what's been discussed.
+3. Recently edited `.md` / `.html` / docs not matching `*-PLAN.md` → audit mode.
+4. Conversation context → infer from what's been discussed.
 
 If nothing is clear, ask: "What are we examining?"
 
 Read the target before starting. Hold: what it does, what it assumes, what's load-bearing.
 
-**Plan mode — reconcile before the loop.** Glance at `git status` and recent commits. If the working tree has already moved past parts of the plan, surface it once: `Plan covers steps 1-5; commits show 1-3 landed. Examine the rest, or the whole plan?` A pressure-test of an already-executed step is cheap noise — examine what's still ahead unless the user wants the full sweep.
+**Plan mode — reconcile before the loop.** Glance at `git status` and recent commits. If the working tree has already moved past parts of the plan, surface it once: `Plan covers steps 1-5; commits show 1-3 landed. Examine the rest, or the whole plan?` A pressure-test of an already-executed step is cheap noise — examine what's still ahead unless the user wants the full sweep. If the plan is *entirely* behind the commits, route to audit mode instead — the artifact is now historical, attack it for accuracy not sequencing.
 
 ---
 
@@ -52,7 +53,7 @@ Each round: cross-examine the Advocate's case, surface gaps, state what's unreso
 
 Round 2+: go _deeper_, not wider. Scrutinize the revisions and the structure underneath — don't scan for more surface nits. New surface findings after round 1 are a smell. If genuinely nothing deeper exists, say so and explain why.
 
-**Watch how revisions move.** The shape of the revisions is itself evidence. If one patches a symptom instead of fixing structure, stays locked in the original frame when a different shape fits better, or converges cleanly on something never pressure-tested — that drift is a finding.
+**Watch how revisions move.** The shape of the revision is itself evidence — patching a symptom instead of fixing structure, or converging cleanly on something never pressure-tested, is a finding.
 
 ---
 
@@ -62,9 +63,15 @@ Round 2+: go _deeper_, not wider. Scrutinize the revisions and the structure und
 
 **Code mode:** correctness, edge cases, guard clauses, error handling, side effects, readability, test coverage.
 
-### Exhibits (code mode only)
+**Audit mode:** claim grounding (each assertion names its evidence — code, test, fixture, JIRA), internal congruence (sections, rules, examples agree), external accuracy (referenced artifacts exist and say what's claimed), load-bearing audit (every part earns its tokens; what could be cut without loss?).
 
-Run what the project has configured before each round: type check, lint, tests. Exhibit failures are facts — the Advocate concedes without argument.
+### Exhibits
+
+**Code mode:** run what the project has configured before each round — type check, lint, tests. Exhibit failures are facts; the Advocate concedes without argument.
+
+**Audit mode:** grep for broken `[[links]]` and missing referenced files; spot-check that named tests, fixtures, or symbols actually exist. A claim citing an artifact that isn't there is an exhibit failure — concede without argument.
+
+**Plan mode:** no exhibits — nothing yet exists to run against.
 
 Don't install tools. Don't add config. If nothing is configured, skip and note it.
 

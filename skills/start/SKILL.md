@@ -9,7 +9,7 @@ Orient the user, then set up the workspace. The brief is the artifact — aim we
 
 Collaborate on ambiguity rather than guessing. Stay grounded in what's given — ticket text and a light scan — not speculation. Don't skip steps or proceed past a blocking failure without user input.
 
-**Voice.** Terse and front-loaded for status chatter (intake, self-review, summary screen, launch). Bullets and tables for multi-item content (leads, gaps, AC). Numbered options for choices (`[1] X  [2] Y  [3] Z`). Clickable file refs in chat (`[cache.ts:42](src/cache.ts#L42)`); TASK.md keeps plain backtick paths. No preamble, no trailing recap. Distinguish observed / inferred / guessed — leads especially: a grep hit is observed, a "this is probably where it lives" is inferred, and unverified hunches stay flagged so the brief doesn't ossify them as fact.
+**Voice.** Terse for status chatter (intake, self-review, summary, launch). Bullets and tables for multi-item content (leads, gaps, AC). Numbered options for fast-loop choices (`[1] X  [2] Y  [3] Z`); `AskUserQuestion` for destructive picks, ambiguous labels, or comparable previews. Clickable file refs in chat (`[cache.ts:42](src/cache.ts#L42)`); TASK.md keeps plain backtick paths. No preamble, no trailing recap. Distinguish observed / inferred / guessed — leads especially: a grep hit is observed, "this is probably where it lives" is inferred. Flag unverified hunches so the brief doesn't ossify them as fact.
 ✓ `PROJ-1234 fetched (Bug, 3 ACs). Leads: src/cache.ts, src/dashboard.ts.`  ✗ `I've successfully fetched the ticket PROJ-1234. It has 3 acceptance criteria and I found 2 leads. We're ready to proceed.`
 
 ## Ticket
@@ -18,60 +18,25 @@ $ARGUMENTS
 
 ---
 
-## How to work
-
-Ask plainly when blocked — no special prompt formatting. One question at a time.
-
----
-
 ## Intake
 
-### Repo guard
+Ask plainly when blocked — no special formatting, one question at a time.
 
-Run `git rev-parse --is-inside-work-tree`. On failure, ask for an absolute path to a repo. Then `git status` — fail on mid-merge, mid-rebase, or unresolved conflicts before any ticket work begins.
-
-### Fetch the ticket
-
-If no ticket ID, ask. Use the Atlassian MCP. If the MCP requires a cloudId, fetch first via `getAccessibleAtlassianResources`.
-
-**Core fields first:** title, type, description, AC, plus repro/expected/actual for bugs. Fetch links, parent epic, attachments, and comments only on demand — when the ticket body references them or self-review flags a gap they'd close. Otherwise note "not fetched."
-
-On fetch failure, ask for a corrected ticket ID or pasted content.
-
-### Read CLAUDE.md _(parallel with ticket fetch)_
-
-Read repo-root `CLAUDE.md` if present. Extract branch naming, test commands, framework hints, conventions. Proceed without if absent.
-
-### Light code scan _(parallel with ticket fetch)_
-
-Orient only — no deep file reading.
-
-- Skim directory / package layout.
-- Note test framework and nearby spec patterns.
-- Surface if the code points somewhere the ticket doesn't.
-
-### Validate workability _(needs ticket body)_
-
-Stop at the first gap that would block a developer. The bar:
-
-- **Framing coherent** — names the actual problem, not a symptom or a pre-baked solution.
-- **Description** present.
-- **AC** concrete and verifiable (sharpen vague ones).
-- **Repro steps** realistic (bugs only).
-- **Dependencies** named.
-- **Scope coherent** — no two equally valid interpretations.
-
-Collaborate to resolve before continuing.
-
-### Code leads _(needs ticket body)_
-
-Grep ticket keywords — component names, error strings, feature flags, AC nouns.
-
-Produce **2-3 best leads** — each a candidate with a one-line "why," not an assertion.
-
-### Branch name
-
-Derive from CLAUDE.md convention. Slug: lowercase, hyphenated, no articles or conjunctions, max 40 chars. Always derive, never ask — unless no convention exists, then ask once.
+- **Repo guard.** `git rev-parse --is-inside-work-tree`; on failure ask for an absolute path. Then `git status` — fail on mid-merge, mid-rebase, or unresolved conflicts before any ticket work.
+- **Fetch the ticket.** If no ticket ID, ask. Use the Atlassian MCP; if it needs a cloudId, fetch via `getAccessibleAtlassianResources`. Core fields first: title, type, description, AC, plus repro/expected/actual for bugs. Fetch links, parent epic, attachments, comments only on demand. On failure, ask for a corrected ID or pasted content.
+- **Read CLAUDE.md** _(parallel with fetch)_. Extract branch naming, test commands, framework hints, conventions. Proceed without if absent.
+- **Light code scan** _(parallel with fetch)_. Orient only — skim layout, note test framework and nearby specs. Surface if the code points somewhere the ticket doesn't.
+- **Validate workability** _(needs ticket body)_. Stop at the first gap that would block a developer:
+  - **Framing coherent** — names the actual problem, not a symptom or pre-baked solution.
+  - **Description** present.
+  - **AC** concrete and verifiable (sharpen vague ones).
+  - **Repro steps** realistic (bugs only).
+  - **Dependencies** named.
+  - **Scope coherent** — no two equally valid interpretations.
+- **Split compound ACs.** "Add X **on the template** and **in the mapping**" is two deliverables — the artifact half is the one that silently ships missing. For bug tickets citing a parent AC, confirm both halves landed before scoping.
+- **Open binary assets.** xlsx, png, pdf — parse the file, don't trust JIRA's description of it. Asset state drifts; ticket text doesn't.
+- **Code leads** _(needs ticket body)_. Grep ticket keywords — component names, error strings, feature flags, AC nouns. Produce **2-3 best leads**, each a candidate with a one-line "why," not an assertion.
+- **Branch name.** Derive from CLAUDE.md convention. Slug: lowercase, hyphenated, no articles or conjunctions, max 40 chars. Always derive, never ask — unless no convention exists, then ask once.
 
 ---
 
@@ -104,25 +69,13 @@ Read the user's familiarity from `$ARGUMENTS` and the ticket framing, then shape
 
 ## Summary screen
 
-```
-TICKET     {TICKET}: {title}
-TYPE       {Bug / Feature / Chore}
-BRANCH     {branch}
+Short fixed-width block: `TICKET / TYPE / BRANCH / SUMMARY / LEADS` (counts only — details live in the task file draft below). If self-review left gaps, add a `GAPS` line — one per line, what's unresolved and why it matters.
 
-SUMMARY    {2-5 sentences. What's being solved,
-            why it matters, what to know first.}
+Ask via `AskUserQuestion` dialog with a preview — the brief is what's being approved, and the preview lets the user see it side-by-side with the choice instead of taking a separate review step. Header `Launch`. Options:
 
-LEADS      {N}
-
-{If gaps remain from self-review:}
-GAPS       {one per line — what's unresolved and why it matters}
-
-[1] GO  [2] REVIEW BRIEF  [3] REJECT
-```
-
-- `[1] GO` — proceed to launch.
-- `[2] REVIEW BRIEF` — render task file draft inline. Flag the part where the user's judgment matters most (usually LEADS — a hypothesis, not a verdict), then: `[1] GO  [2] REVISE  [3] CANCEL`. `REVISE` → ask what's off, re-render. `CANCEL` → back to summary.
-- `[3] REJECT` — ask targeted questions, revise, re-render.
+- `GO` — proceed to launch. Preview: the full task file draft rendered as it will be written, with the part where the user's judgment matters most (usually LEADS — a hypothesis, not a verdict) flagged inline.
+- `REVISE` — user names what's off; re-render and re-ask.
+- `REJECT` — ask targeted questions, revise, re-render.
 
 ---
 
@@ -189,7 +142,7 @@ Check for `code` CLI (`which code`). Warn if missing but continue.
 
 ### Worktree or branch?
 
-Ask: `[1] BRANCH (branch in current repo)  [2] WORKTREE (isolated folder + branch)`
+Ask via `AskUserQuestion` dialog — the choice shapes where the workspace lives, and the option labels need descriptions to disambiguate. Header `Workspace`. Options: `Branch` (new branch in the current repo — fast, shares the working tree, switching contexts means stashing or committing), `Worktree` (isolated folder under `../worktrees/{TICKET}` with its own working tree — switching contexts is `cd`, no stashing, but takes more disk).
 
 ### Create
 
