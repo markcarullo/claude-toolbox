@@ -1,6 +1,6 @@
 # claude-toolbox
 
-Claude Code skills that take you from a JIRA ticket to an open PR.
+Claude Code skills that take you from a JIRA ticket to an open PR, plus a couple of utilities that work in any session.
 
 Each stage is its own skill, with a gate you control. Skills hand off context through files in your working directory and pick up your project's conventions from `CLAUDE.md`.
 
@@ -13,9 +13,22 @@ Each stage is its own skill, with a gate you control. Skills hand off context th
 | `/tdd`     | Turns the AC into failing tests, confirms each is RED for the right reason — test files only |
 | `/collab`  | Pairs on the implementation, calibrating from a nudge to taking the keyboard        |
 | `/break`   | Pre-ship adversarial gate — an Attacker proposes breakages, a Skeptic refutes reachability; report-only |
-| `/examine` | Runs an Advocate/Adversary loop to pressure-test code, a plan, or a doc             |
+| `/examine` | Runs an Advocate/Adversary loop to pressure-test code, a plan, or an asserting doc  |
 | `/ship`    | Runs checks, verifies AC, drafts the commit (and PR if pushing), gates each write   |
 | `/peer`    | Reviews a teammate's PR — never writes to GitHub                                    |
+
+## Utilities
+
+Not pipeline stages — invoke either in any session, ticket or no ticket.
+
+| Command     | Description                                                                          |
+| ----------- | ------------------------------------------------------------------------------------ |
+| `/tldr`     | Reshapes responses for the rest of the session — point first, scannable, hard-compressed |
+| `/withcare` | Standing "proceed, carefully" — check the pending change still holds, adapt if things moved, then apply; never a blind write |
+
+`/tldr` ships an optional reinforcement hook (`install-hook.sh` in its skill folder) that re-injects the style each turn so it survives a compaction. Run it once when you want that backstop: `bash ~/.claude/skills/tldr/install-hook.sh`, then restart Claude Code. `uninstall-hook.sh` removes it.
+
+`/withcare` is a slash command (in `.claude/commands/`), your standing reply when a skill asks to proceed. Pass a note to steer it — `/withcare skip the docstring`.
 
 ## Workflow
 
@@ -46,7 +59,7 @@ Skills share context through two files in the working directory:
 - `/tdd` reads both files to turn the AC into failing tests; defaults to them, or takes a behavior in prose
 - `/collab` reads both files for context
 - `/break` defaults to the uncommitted diff against the task/plan; also takes an area, a PR, or a workflow
-- `/examine` reads the plan file by default, or auto-detects from staged changes, recently edited docs, and conversation
+- `/examine` reads the plan file by default, or auto-detects code (staged changes), docs (audit mode), and conversation
 - `/ship` reads the task file to verify AC, and keeps both files out of commits
 
 If your repo has a `CLAUDE.md`, skills follow the conventions it documents — branch naming, commit style, PR template, test commands, codebase patterns.
@@ -152,6 +165,9 @@ Loose ends: loading indicator has no error state yet
 From the repo root:
 
 ```bash
-mkdir -p ~/.claude/skills
+mkdir -p ~/.claude/skills ~/.claude/commands
 cp -r skills/* ~/.claude/skills/
+cp .claude/commands/* ~/.claude/commands/   # slash commands (e.g. /withcare)
 ```
+
+`/tldr`'s reinforcement hook is optional and installed separately — see Utilities above.
