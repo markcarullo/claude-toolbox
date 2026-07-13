@@ -60,22 +60,23 @@ Ask `[1] Commit only  [2] Commit + push`. Default `[1]`.
 
 If CLAUDE.md sets a convention (commit style, PR template, non-default base), note it in one line before the draft.
 
-**What makes the writeup good** — holds for the commit message and the PR description alike. One principle: **carry what the source can't, claim nothing it doesn't show.** Its corollaries:
+**What makes the writeup good** — holds for the commit message and the PR description alike. One principle: **carry what the source can't, claim nothing it doesn't show.** The diff shows the mechanics; the writeup carries what it can't. Two constraints on every line: **claim only what's shown** — the diff shows every change but not the code around it, so claim the effect those changed lines have, not how code you can't see behaves; hold the why strictest, since the reader trusts it as framing. And **size to the reader** — every line earns its place; if the diff already says it, you don't.
 
-- **Claim only what's shown.** The test for any line: can you point to the changed lines that prove it? The diff shows every change but not the code around it — claim the effect those lines have, not how code you can't see behaves. Hold the why/Summary strictest, since the reader trusts it as framing.
-- **Lead with the why.** The source shows the mechanics; the writeup carries what it can't — the problem, the reason it was needed. Omit it rather than invent one.
-- **Keep the non-obvious.** A subtle mechanism, a deliberate non-change, a gotcha — put it where the thing it concerns lives, never dropped for tidiness.
-- **Size to the reader, not the source.** Every line earns its place; if the source already says it, you don't. A self-evident change is subject-only.
+Build it from these three, in order of value:
+
+- **The why.** The problem, the reason it was needed — the writeup is the only place it gets recorded, so lead with it. If the change and the ticket give you none, omit it rather than invent one.
+- **A map of the core files.** Name the principal files or areas, each with a short note on what changed there — not an inventory: skip what the diff makes clear (a rename, a lockfile bump) and don't restate edits it shows. Across many files, one bullet per shared move, named by flow or module: a new entity through the standard stack is "wired end-to-end", not a bullet per layer. Spend the words on what isn't routine — a guard or permission check, a default value, a case handled differently from the rest.
+- **The non-obvious.** A subtle mechanism, a deliberate non-change, a gotcha — put it where the thing it concerns lives, never dropped for tidiness.
+
+If it's all obvious from the diff, the writeup is short.
 
 **Commit message.** One line, imperative mood, under 72 chars. Reader knows what changed without opening the diff. Follow the CLAUDE.md convention if set; otherwise `{TICKET}: what changed`, or just `what changed` if there's no ticket.
 
-**PR description** (path 2, new PR only). Written for the reviewer — short, bullets over prose, no pedantry.
-
-- **Why** — one or two bullets on the motivation. Skip if the title already says it.
-- **What Changed** — the shape of the change, not a file-by-file list. A new entity through the standard stack is "wired end-to-end," not a bullet per layer; spend words on the non-routine — a guard, a default, a behavior flip, a migration order, a new dependency a reviewer would miss.
-- **Ticket** — link if known.
+**PR description** (path 2, new PR only). Written for the reviewer — short, bullets over prose, no pedantry. The three ingredients above become sections: **Why**, **What Changed** (the map), and a **Ticket** link if known.
 
 If `.github/PULL_REQUEST_TEMPLATE.md` exists, follow its structure instead. Add `Known Issues` if shipping with failures or unmet AC — on path 1, Known Issues surfaces in the Done output instead of in a description.
+
+**Fence for copy-clean.** Both surfaces get drafted inside a ``` code fence so the user copies them without markdown leaking in. Headings are `**bold**`, never `#` — in the previewed draft `#` renders as a heading instead of a bold label, and it reads wrong in a commit body. No tables, no trailers.
 
 ### Review gate
 

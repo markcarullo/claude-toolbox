@@ -1,10 +1,10 @@
 ---
-description: "Proceed — carefully and deliberately, once certain of the premise. Usage: /confirm [note]"
+description: "Make sure, then move — slowly but surely, deliberately, until soundly done. Usage: /steady [note]"
 ---
 
-# confirm
+# steady
 
-A yes to proceed. Then, carefully and deliberately:
+Make sure, then move — deliberately.
 
 - **Be certain of the premise.** What the action rests on has to hold; if it doesn't, say what's wrong and wait.
 - **Work deliberately.** One considered step at a time, only what's asked, until it's soundly done.

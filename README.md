@@ -24,11 +24,11 @@ Not pipeline stages — invoke either in any session, ticket or no ticket.
 | Command     | Description                                                                          |
 | ----------- | ------------------------------------------------------------------------------------ |
 | `/tldr`     | Reshapes responses for the rest of the session — point first, scannable, hard-compressed |
-| `/confirm`  | A yes to proceed — carefully and deliberately: be certain the premise holds, then work deliberately |
+| `/steady`   | Make sure, then move on what's pending — slowly but surely, once certain of the premise |
 
 `/tldr` ships an optional reinforcement hook (`install-hook.sh` in its skill folder) that re-injects the style each turn so it survives a compaction. Run it once when you want that backstop: `bash ~/.claude/skills/tldr/install-hook.sh`, then restart Claude Code. `uninstall-hook.sh` removes it.
 
-`/confirm` is a slash command (in `commands/`), your standing reply when a skill asks to proceed. Pass a note to steer it — `/confirm skip the docstring`.
+`/steady` is a slash command (in `commands/`), your standing reply when a skill asks to proceed. Pass a note to steer it — `/steady skip the docstring`.
 
 ## Workflow
 
@@ -167,7 +167,7 @@ From the repo root:
 ```bash
 mkdir -p ~/.claude/skills ~/.claude/commands
 cp -r skills/* ~/.claude/skills/
-cp commands/* ~/.claude/commands/   # slash commands (e.g. /confirm)
+cp commands/* ~/.claude/commands/   # slash commands (e.g. /steady)
 ```
 
 `/tldr`'s reinforcement hook is optional and installed separately — see Utilities above.
