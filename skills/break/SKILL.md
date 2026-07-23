@@ -13,7 +13,7 @@ Not to be confused with `examine` code mode: the posture is opposite. `examine` 
 
 In-memory only — `break` never writes (beyond one optional report doc), never edits the target, never ships, never files. It finds; you fix or file (Outcome covers disposition). A clean pass ends by pointing at `/ship`.
 
-**Voice.** Minimize the play-by-play — the value is the surviving findings, not the sparring. One line per round naming what was attacked and whether it survived refutation. Bullets/tables for multi-finding content. Numbered options for fast-loop discrete asks (`[1] X  [2] Y  [3] Z`); `AskUserQuestion` for ambiguous target picks or comparable previews; open-ended asks stay prose. Clickable file refs into the target (`[PrimeBrokersPanel.tsx:71](src/view/routes/admin/organisation/OrganisationDialog/PrimeBrokersPanel.tsx#L71)`). Distinguish observed / inferred / guessed — a code path you read is observed, a state you believe is reachable is inferred until traced. No preamble, no trailing recap.
+**Voice.** Minimize the play-by-play — the value is the surviving findings, not the sparring. One line per round naming what was attacked and whether it survived refutation. Findings land scannable-first (the Outcome table), never a stack of prose stanzas. Numbered options for fast-loop discrete asks (`[1] X  [2] Y  [3] Z`); `AskUserQuestion` for ambiguous target picks or comparable previews; open-ended asks stay prose. Clickable file refs into the target (`[PrimeBrokersPanel.tsx:71](src/view/routes/admin/organisation/OrganisationDialog/PrimeBrokersPanel.tsx#L71)`). Distinguish observed / inferred / guessed — a code path you read is observed, a state you believe is reachable is inferred until traced. No preamble, no trailing recap.
 ✓ `Attacker: normalize(name) over the list — name is null for a created-not-named entity. Skeptic: is that state reachable? Yes — an interrupted two-phase add leaves it (producer at workflowEpic.ts:231). Survives.`  ✗ `Let me have the Attacker take a look here. It seems like there might be a potential null issue worth exploring around the name handling.`
 
 ## Target
@@ -152,22 +152,20 @@ Never write to Jira, GitHub, or the target's files. Present the report and wait.
 
 ### Ranked findings
 
-Order by severity, then by confidence. Each surviving finding gets a full block; unverified candidates get a lighter list.
+Lead with what surfaced, so the reader sees every breakage, its severity, and what to do without reading prose. **Two or more confirmed findings → a table**; **exactly one → the same columns as a short block**, no table overhead. Order by severity, then confidence. Unverified and killed candidates are one-liners below.
 
 ```
 {N} breakages survived refutation, {N} killed, {N} unverified.
 
 ── Confirmed ──
 
-[1] {SEVERITY} · {one-line what breaks}
-    Where:   [file:line](path#Lline)
-    Break:   {the failure}
-    Trigger: {the bad state}
-    Path:    {how the system reaches it — producer, flow, lifecycle event}
-    Skeptic tried: {what refutation was attempted and why it failed}
-    Fix direction: {concrete, one line — "null-guard trimToLower" / "filter nameless before .some" / "don't persist the partial entity"}
+| # | Sev | What breaks | Where | Fix |
+|---|-----|-------------|-------|-----|
+| 1 | {SEV} | {one-line failure} | [file:line](path#Lline) | {concrete one-liner — "null-guard trimToLower" / "filter nameless before .some"} |
+| 2 | ... | ... | ... | ... |
 
-[2] ...
+  1 — reachable via: {trigger → path: producer / flow / lifecycle event}. Skeptic tried {refutation}, failed because {reason}.
+  2 — ...
 
 ── Unverified (reachability needs runtime) ──
 - {candidate} — blocked on {what's needed to confirm: a log value, a repro, a runtime state}
@@ -175,6 +173,8 @@ Order by severity, then by confidence. Each surviving finding gets a full block;
 ── Killed ──
 - {candidate} — refuted by {the guard / producer behavior that makes it unreachable}
 ```
+
+The indented path line carries break's whole bar — a finding is real only because reachability was traced — so it stays, one line per finding. Drop it only when the "What breaks" cell already makes reachability self-evident.
 
 Severity: **Critical** (data loss/corruption, security, the operation is impossible), **Major** (a core workflow breaks under a reachable condition), **Minor** (degraded, a workaround exists), **Cosmetic** (display only). If the project (CLAUDE.md, a sibling skill) defines its own severity scale — domain-specific bands the team already uses — use that instead.
 

@@ -7,7 +7,7 @@ description: "Pressure-test code, a plan, or an asserting artifact (skill, doc, 
 
 Pressure-test existing work via an Advocate/Adversary loop. In-memory only — no files change. Output: a recommendation, a confirmation it holds, or unresolved gaps.
 
-**Voice.** Minimize inline output — the value is the outcome, not the play-by-play. One line per round, naming what was tested and what surfaced (or held). Bullets when multiple findings surface. Numbered options for fast-loop discrete asks like the outcome screen (`[1] X  [2] Y  [3] Z`); `AskUserQuestion` for destructive picks, ambiguous labels, or comparable previews; open-ended asks stay prose. Clickable file refs into the target (`[migration.ts:42](src/migration.ts#L42)`). On exit, present the outcome and wait. No narration, no transitions, no preamble, no trailing recap.
+**Voice.** Minimize inline output — the value is the outcome, not the play-by-play. One line per round, naming what was tested and what surfaced (or held). The recommendation lands scannable-first (the Outcome table) before the full revised artifact. Numbered options for fast-loop discrete asks like the outcome screen (`[1] X  [2] Y  [3] Z`); `AskUserQuestion` for destructive picks, ambiguous labels, or comparable previews; open-ended asks stay prose. Clickable file refs into the target (`[migration.ts:42](src/migration.ts#L42)`). On exit, present the outcome and wait. No narration, no transitions, no preamble, no trailing recap.
 ✓ `Adversary: step 3 assumes the migration is idempotent — not verified.`  ✗ `Let me now have the Adversary take a look. It seems to me that step 3 might be making an assumption about idempotency that we haven't really verified yet.`
 
 ## Target
@@ -129,6 +129,8 @@ The loop ends when any of these is true:
 
 Never write to files. Present the outcome and wait.
 
+Optimize for at-a-glance understanding — the reader should see what surfaced and what to do without wading through prose. Lead with the scannable layer, put the full artifact below it. (Structurally congruent with `break`'s outcome by design: same status → scannable-layer → body → numbered-options shape, each gating its table on two-or-more. The columns and body differ because `examine` recommends and `break` reports.)
+
 ### Holds as-is
 
 ```
@@ -139,12 +141,18 @@ Nothing to change.
 
 ### Recommendation
 
-Present what the Advocate revised and why — a recommendation, not an edit.
+Present what the Advocate revised and why — a recommendation, not an edit. **Two or more changes → a table** so they scan; **exactly one → a short prose block**, no table overhead. Then the full revised artifact below, for the reader who wants it.
 
 ```
 Here's what I'd change.
 
-{summary + revised output — plan text, code block, or diff}
+| # | Area | Was | Change |
+|---|------|-----|--------|
+| 1 | {what it touches} | {the gap the Adversary found} | {the revision, one line} |
+| 2 | ... | ... | ... |
+
+--- revised {plan / code / diff} ---
+{the full revised output}
 
 [1] Apply  [2] Adjust  [3] Discard
 ```

@@ -126,16 +126,17 @@ Loose ends: loading indicator has no error state yet
 **`/break`** attacks the change before it ships, reporting only breakages it can trace a path to (`/examine` is the alternative here — it returns a recommendation instead of an attack):
 
 ```
-1 breakage survived refutation, 0 killed, 1 unverified.
+2 breakages survived refutation, 1 killed, 0 unverified.
 
 ── Confirmed ──
 
-[1] Major · refresh during an in-flight poll reads a half-cleared cache
-    Where:   src/cache.ts:48
-    Break:   invalidate() clears the key mid-poll; the poll resolves and re-stores stale data
-    Trigger: a manual refresh fires while a poll is still awaiting
-    Path:    poll started at dashboard.ts:30, not cancelled on refresh
-    Fix direction: cancel or version the in-flight poll on invalidate
+| # | Sev | What breaks | Where | Fix |
+|---|-----|-------------|-------|-----|
+| 1 | Major | refresh during an in-flight poll reads a half-cleared cache | src/cache.ts:48 | cancel or version the in-flight poll on invalidate |
+| 2 | Minor | refresh mid-fetch shows no pending state, so a failed reload looks done | src/dashboard.ts:30 | render an error state on the refresh indicator |
+
+  1 — reachable via: a manual refresh fires while a poll is still awaiting → invalidate() clears the key mid-poll, the poll resolves and re-stores stale data (poll started at dashboard.ts:30, not cancelled on refresh).
+  2 — reachable via: the refresh handler has no error branch, so a rejected reload leaves the last-good view with no signal (loose end carried from /collab).
 ```
 
 **`/ship`** maps each acceptance criterion to the diff, then drafts the commit:
