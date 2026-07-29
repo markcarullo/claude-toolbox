@@ -9,34 +9,45 @@ description: >-
 
 ## When it fires
 
-Called once, on for good. The moment the user invokes `/tldr` — or asks
-for this style in their own words — it applies to **every reply for the
-rest of the session**, until the user turns it off. It survives any
-length of conversation, and a compaction once the hook is installed (see
-"Make it survive the conversation").
+**On by default, once the hook is installed.** Every reply in every
+session, no invocation needed — the reinforcement hook re-injects the
+style each turn, surviving any conversation length and any compaction
+(see "Make it survive the conversation"). Without the hook installed,
+`/tldr` still turns it on for the session it's invoked in.
+
+Invoking `/tldr` when it's already on is a no-op worth honoring quietly:
+clear any off-flag, confirm in one line, don't explain that it was
+already active.
 
 **When it's dropped mid-sentence, ask first.** If "tldr" appears inside
 another message — a bare aside, not a clear request — don't assume they
-mean turn the mode on. Ask in one line: "Sorry, would you like me to
-reformat my last response?" If yes, reformat it _and_ the mode is now on
-— on for good, like any other activation. Only an unambiguous request
-turns it on without asking.
+mean anything about the mode. Ask in one line: "Sorry, would you like me
+to reformat my last response?" Then reformat if yes.
 
-**Set the flag on, clear it off.** The flag is **per session**, so tldr
-affects only the session it was invoked in — never leaks to others. Key
-it by `$CLAUDE_CODE_SESSION_ID`. When the mode turns on, run and check
-in one step:
+**The gate is an off-flag, per session.** Default is on, so there's
+nothing to set to activate. Opting out is what gets written, and it's
+keyed by `$CLAUDE_CODE_SESSION_ID` so it never leaks to another session.
+
+On "tldr off":
 
 ```
 sid="$CLAUDE_CODE_SESSION_ID"
-[ -n "$sid" ] && touch ~/.claude/.tldr-active-"$sid" \
-  && echo "tldr armed for session $sid" \
-  || echo "WARN: no session id — tldr flag not set; style applies this turn only"
+[ -n "$sid" ] && touch ~/.claude/.tldr-off-"$sid" \
+  && echo "tldr off for session $sid" \
+  || echo "WARN: no session id — off-flag not set; tldr stays on"
 ```
 
-Turn off with `rm -f ~/.claude/.tldr-active-"$CLAUDE_CODE_SESSION_ID"`.
-The reinforcement hook reads the same per-session flag from the session
-id on its stdin, firing _only while this session's flag exists_.
+On "tldr on" (or `/tldr` while an off-flag exists):
+
+```
+sid="$CLAUDE_CODE_SESSION_ID"
+[ -n "$sid" ] && rm -f ~/.claude/.tldr-off-"$sid" \
+  && echo "tldr on for session $sid" \
+  || echo "WARN: no session id — off-flag not cleared; check ~/.claude/.tldr-off-*"
+```
+
+The hook reads the same per-session flag from the session id on its
+stdin, firing _unless_ that flag exists.
 
 ## What this does
 
@@ -78,9 +89,14 @@ to see.
 - **A table** for options, trade-offs, or anything with 2+ columns to
   compare.
 - **Bold labels** to open a bullet when each one is a distinct idea.
-- **Prose** only for a single short thought — one or two sentences.
+- **Prose** only for a single short thought — one or two sentences, or
+  where the exchange is a genuine dialogue (a question you want answered,
+  a nuance that dies as a fragment).
 
 Never a wall of text. If a paragraph runs past ~4 lines, it's a list.
+**The prose case is not an exemption from that** — a Socratic question
+still ends the reply rather than hiding mid-paragraph, and a comparison
+of 2+ things with shared attributes is still a table.
 
 **Action items stand out.** When you recommend steps or next actions,
 make them a numbered or bulleted list — never bury them mid-paragraph.
@@ -128,9 +144,16 @@ output, not just this instruction.**
   exactly as tight as turn 1.
 - **The durable backstop is the hook, not this text.** A reinforcement
   hook (installed once via `install-hook.sh` in this skill folder)
-  re-injects the tldr reminder every turn while the flag exists — it
-  lives in settings.json, so it survives a compaction that drops this
-  skill. Install it once; never self-install mid-conversation.
+  re-injects the tldr reminder every turn unless the session has an
+  off-flag — it lives in settings.json, so it survives a compaction that
+  drops this skill, and it's what makes the style default-on rather than
+  something the user re-invokes. Install it once; never self-install
+  mid-conversation.
+- **The toolbox skills carry the same tripwires inline.** Each skill's
+  **Voice** section states point-first, cut-the-filler, and the ~4-line
+  rule in its own terms — so the style holds inside a skill run even
+  before the hook fires. This skill remains the canonical statement;
+  those are tuned restatements, not rivals.
 - If you notice you've slipped for a few turns, don't announce it — just
   snap back to the format silently on the next reply.
 

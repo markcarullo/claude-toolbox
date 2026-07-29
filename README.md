@@ -12,6 +12,7 @@ Each stage is its own skill, with a gate you control. Skills hand off context th
 | `/unpack`  | Runs a Socratic dialogue — studies a topic, or shapes a plan and writes it to a file |
 | `/tdd`     | Turns the AC into failing tests, confirms each is RED for the right reason — test files only |
 | `/collab`  | Pairs on the implementation, calibrating from a nudge to taking the keyboard        |
+| `/minimal` | Reduces the change to what's load-bearing for its consumer — cuts are evidence-bound and gated |
 | `/break`   | Pre-ship adversarial gate — an Attacker proposes breakages, a Skeptic refutes reachability; report-only |
 | `/examine` | Runs an Advocate/Adversary loop to pressure-test code, a plan, or an asserting doc  |
 | `/ship`    | Runs checks, verifies AC, drafts the commit (and PR if pushing), gates each write   |
@@ -23,10 +24,12 @@ Not pipeline stages — invoke either in any session, ticket or no ticket.
 
 | Command     | Description                                                                          |
 | ----------- | ------------------------------------------------------------------------------------ |
-| `/tldr`     | Reshapes responses for the rest of the session — point first, scannable, hard-compressed |
+| `/tldr`     | Point first, scannable, hard-compressed — on by default once its hook is installed |
 | `/steady`   | Make sure, then move on what's pending — slowly but surely, once certain of the premise |
 
-`/tldr` ships an optional reinforcement hook (`install-hook.sh` in its skill folder) that re-injects the style each turn so it survives a compaction. Run it once when you want that backstop: `bash ~/.claude/skills/tldr/install-hook.sh`, then restart Claude Code. `uninstall-hook.sh` removes it.
+`/tldr`'s style is **built into every skill** — each skill's Voice section carries the same tripwires (point first, cut the filler, past ~4 lines it's a list), tuned to what that skill delivers. You shouldn't need to ask for it.
+
+For the durable version, install its reinforcement hook once — after the install step below: `bash ~/.claude/skills/tldr/install-hook.sh`. It re-injects the style every turn from `settings.json`, so it survives a compaction that drops the skill text — and it makes tldr **on by default in every session**, no invocation needed. If it doesn't fire, restart Claude Code (or open `/hooks` once) so the watcher picks it up. Opt a single session out with `tldr off`, back in with `tldr on`; both are per session and never global. `uninstall-hook.sh` removes the hook entirely.
 
 `/steady` is a slash command (in `commands/`), your standing reply when a skill asks to proceed. Pass a note to steer it — `/steady skip the docstring`.
 
@@ -41,6 +44,8 @@ Not pipeline stages — invoke either in any session, ticket or no ticket.
         ↓
 /collab             Pair on the implementation
         ↓
+/minimal            Cut what doesn't earn its place, tighten what does
+        ↓
 /break or /examine  Attack the change, or pressure-test the reasoning
         ↓
 /ship               Checks, commit, push, PR handoff
@@ -48,7 +53,7 @@ Not pipeline stages — invoke either in any session, ticket or no ticket.
 /peer <PR>          Review someone else's work
 ```
 
-The diagram shows the full path, but `/unpack`, `/tdd`, `/collab`, `/break`, and `/examine` work on their own — no ticket needed.
+The diagram shows the full path, but `/unpack`, `/tdd`, `/collab`, `/minimal`, `/break`, and `/examine` work on their own — no ticket needed.
 
 ### How the skills connect
 
@@ -58,6 +63,7 @@ Skills share context through two files in the working directory:
 - `/unpack` reads the task file; in plan mode, writes `{TICKET}-PLAN.md` — approach, steps, assumptions
 - `/tdd` reads both files to turn the AC into failing tests; defaults to them, or takes a behavior in prose
 - `/collab` reads both files for context
+- `/minimal` defaults to the uncommitted diff; also takes a file, an area, or prose. Cuts are gated, rewrites preview as a diff
 - `/break` defaults to the uncommitted diff against the task/plan; also takes an area, a PR, or a workflow
 - `/examine` reads the plan file by default, or auto-detects code (staged changes), docs (audit mode), and conversation
 - `/ship` reads the task file to verify AC, and keeps both files out of commits
@@ -171,4 +177,4 @@ cp -r skills/* ~/.claude/skills/
 cp commands/* ~/.claude/commands/   # slash commands (e.g. /steady)
 ```
 
-`/tldr`'s reinforcement hook is optional and installed separately — see Utilities above.
+`/tldr`'s reinforcement hook installs separately — it's what makes the style on-by-default in every session. See Utilities above.

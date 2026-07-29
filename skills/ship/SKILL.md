@@ -7,7 +7,7 @@ description: "Ship the change. Run lint + relevant tests, verify AC if a task fi
 
 Check, draft, gate the writes up to push, hand off the next step.
 
-**Voice.** Terse, skimmable. Bullets and tables over prose. Numbered options for fast-loop blocking asks (`[1] X  [2] Y  [3] Z`); `AskUserQuestion` for destructive picks, ambiguous labels, or comparable previews. Clickable file refs for findings (`[auth.ts:42](src/auth.ts#L42)`). No preamble, no trailing recap. Distinguish observed / inferred / guessed — AC verdicts especially: ✓/~/✗ from a diff skim is inference, not proof. Say so when uncertain rather than ossifying a guess as a verdict.
+**Voice.** Point first — the answer, the verdict, the result; reasoning after, and only if it earns its place. Cut filler: no preamble ("Great question", "Let me…"), no hedging, no restating the ask. Compress hard — half the words, all the meaning; past ~4 lines a paragraph becomes a list. Bullets and tables over prose. Numbered options for fast-loop blocking asks (`[1] X  [2] Y  [3] Z`); `AskUserQuestion` for destructive picks, ambiguous labels, or comparable previews. Clickable file refs for findings (`[auth.ts:42](src/auth.ts#L42)`). No preamble, no trailing recap. Distinguish observed / inferred / guessed — AC verdicts especially: ✓/~/✗ from a diff skim is inference, not proof. Say so when uncertain rather than ossifying a guess as a verdict.
 ✓ `Staged 4 files. Commit as "PROJ-1234: invalidate cache"?`  ✗ `I've staged 4 files for you. Would you like me to proceed with the commit?`
 
 ---

@@ -7,7 +7,7 @@ description: "Pressure-test code, a plan, or an asserting artifact (skill, doc, 
 
 Pressure-test existing work via an Advocate/Adversary loop. In-memory only — no files change. Output: a recommendation, a confirmation it holds, or unresolved gaps.
 
-**Voice.** Minimize inline output — the value is the outcome, not the play-by-play. One line per round, naming what was tested and what surfaced (or held). The recommendation lands scannable-first (the Outcome table) before the full revised artifact. Numbered options for fast-loop discrete asks like the outcome screen (`[1] X  [2] Y  [3] Z`); `AskUserQuestion` for destructive picks, ambiguous labels, or comparable previews; open-ended asks stay prose. Clickable file refs into the target (`[migration.ts:42](src/migration.ts#L42)`). On exit, present the outcome and wait. No narration, no transitions, no preamble, no trailing recap.
+**Voice.** Point first — what surfaced, what held, what to do; reasoning after, and only if it earns its place. Cut filler: no preamble ("Great question", "Let me…"), no hedging, no restating the ask. Compress hard — half the words, all the meaning; past ~4 lines a paragraph becomes a list. Minimize inline output — the value is the outcome, not the play-by-play. One line per round, naming what was tested and what surfaced (or held). The recommendation lands scannable-first (the Outcome table) before the full revised artifact. Numbered options for fast-loop discrete asks like the outcome screen (`[1] X  [2] Y  [3] Z`); `AskUserQuestion` for destructive picks, ambiguous labels, or comparable previews; open-ended asks stay prose. Clickable file refs into the target (`[migration.ts:42](src/migration.ts#L42)`). On exit, present the outcome and wait. No narration, no transitions, no preamble, no trailing recap.
 ✓ `Adversary: step 3 assumes the migration is idempotent — not verified.`  ✗ `Let me now have the Adversary take a look. It seems to me that step 3 might be making an assumption about idempotency that we haven't really verified yet.`
 
 ## Target
@@ -19,6 +19,8 @@ $ARGUMENTS
 ## On entry
 
 ### Detect the target
+
+**Continuation first.** If a loop already ran this session and `$ARGUMENTS` is bare or refers back to it — `findings`, `further`, `staged changes`, `scrutinize findings`, `that refinement further`, or empty — this is a continuation, not a new target. Keep the previous target and mode; don't re-detect and don't restart at round 1. Resume one altitude deeper than where the last loop stopped, exactly as a Round 2+ would. If the last loop already reached detail, say so and attack the revisions themselves rather than re-running the same pass.
 
 If `$ARGUMENTS` names what to examine, classify: design-shaped (approach, sequencing, architecture) → plan mode; implementation-shaped → code mode; assertion-shaped (skills, docs, handovers, READMEs — text that *asserts* rather than proposes or executes) → audit mode.
 
@@ -178,4 +180,5 @@ This needs rethinking.
 - **Never inflate findings.** If the work is solid, say so.
 - **Exhibit failures are not negotiable.** Red tests, type errors, lint errors — concede, don't argue.
 - **Observed / inferred / guessed.** "I see X" / "this suggests Y" / "guessing — worth checking."
+- **Read it before claiming it's absent.** "This lacks X" requires opening the file and looking. A grep miss is not absence — substring hits lie in both directions, and a claim sourced from a match you didn't read is guessed, never observed.
 - **Follow conventions.** Codebase patterns visible in the target and CLAUDE.md if present.

@@ -11,9 +11,11 @@ set -euo pipefail
 SETTINGS="$HOME/.claude/settings.json"
 
 # Clear every per-session flag (glob; the nullglob guard avoids a literal
-# match when none exist).
+# match when none exist). Both names: .tldr-off-* is the current opt-out flag,
+# .tldr-active-* the opt-in flag from before tldr became default-on — clearing
+# it too keeps an upgrade from leaving orphans behind.
 shopt -s nullglob
-rm -f "$HOME"/.claude/.tldr-active-*
+rm -f "$HOME"/.claude/.tldr-off-* "$HOME"/.claude/.tldr-active-*
 shopt -u nullglob
 
 if [ ! -f "$SETTINGS" ]; then
