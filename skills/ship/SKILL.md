@@ -1,14 +1,16 @@
 ---
 name: ship
-description: "Ship the change. Run lint + relevant tests, verify AC if a task file is present, draft the commit, gate the writes up to push, hand off the next step. Usage: /ship"
+description: "Ship the change. Run lint + relevant tests, verify AC if a task file is present, then report only or draft the commit and gate the writes up to push. Usage: /ship"
 ---
 
 # ship
 
 Check, draft, gate the writes up to push, hand off the next step.
 
-**Voice.** Point first — the answer, the verdict, the result; reasoning after, and only if it earns its place. Cut filler: no preamble ("Great question", "Let me…"), no hedging, no restating the ask. Compress hard — half the words, all the meaning; past ~4 lines a paragraph becomes a list. Bullets and tables over prose. Numbered options for fast-loop blocking asks (`[1] X  [2] Y  [3] Z`); `AskUserQuestion` for destructive picks, ambiguous labels, or comparable previews. Clickable file refs for findings (`[auth.ts:42](src/auth.ts#L42)`). No preamble, no trailing recap. Distinguish observed / inferred / guessed — AC verdicts especially: ✓/~/✗ from a diff skim is inference, not proof. Say so when uncertain rather than ossifying a guess as a verdict.
+**Voice.** Point first; reasoning only where the decision turns on it. No preamble, no hedging, no restating the ask. Past ~4 lines a paragraph becomes a list. Here the point is the verdict, the result. Bullets and tables over prose. Numbered options for fast-loop blocking asks (`[1] X  [2] Y  [3] Z`); `AskUserQuestion` for destructive picks, ambiguous labels, or comparable previews. Clickable file refs for findings (`[auth.ts:42](src/auth.ts#L42)`). Distinguish observed / inferred / guessed — AC verdicts especially: ✓/~/✗ from a diff skim is inference, not proof. Say so when uncertain rather than ossifying a guess as a verdict.
 ✓ `Staged 4 files. Commit as "PROJ-1234: invalidate cache"?`  ✗ `I've staged 4 files for you. Would you like me to proceed with the commit?`
+
+**Log.** With a task file in play, keep the decision trail in `{TICKET}-LOG.md` beside it — one line per entry, appended from the shell (`printf '%s\n' "- $(date +%FT%R) {line}" >> {TICKET}-LOG.md`), never via `Write`/`Edit`, never from a subagent. No task file, no log. `enter [ship] report only` once the scope is picked; `outcome` at Done or Report only (the ship score, or the commit hash). The log never ships: it is excluded from staging like the task and plan files.
 
 ---
 
@@ -48,11 +50,15 @@ _Skip if no task file was read in preflight._ One-line verdict per AC from a dif
 
 If most ACs come back ✗ unmet but the diff is substantive and coherent, suspect a stale TASK — the user may have moved past the original AC list. Surface as a finding: `Possible stale TASK — N ACs unmet but the diff looks like deliberate, finished work.` At the review gate, the user approves to ship anyway (Known Issues notes the divergence) or aborts to update the TASK file outside `/ship`.
 
+**Deferred items.** If the task file has a `## Deferred` section, check each item's condition (a PR merged, a branch landed, a decision made). Lapsed → finding `Deferred item unblocked: {finding}` at the review gate; still blocked → leave it. No section → skip silently.
+
 ---
 
 ## Scope
 
-Ask `[1] Commit only  [2] Commit + push`. Default `[1]`.
+Ask `[0] Report only  [1] Commit only  [2] Commit + push`. Default `[1]`. **Report only** stops here: the findings and a one-line ship score (checks, AC, deferred), no draft, no commit — only the log's `outcome` line, then the retraction handoff below, since this is the end of the ticket for `/ship`.
+
+**Retraction handoff** _(Report only, and Done)_. If `{TICKET}-LOG.md` has `retract` lines, list them and ask once: `[1] Save as memory  [2] Skip`. A saved retraction becomes a `feedback` memory — the mistake and the heading that replaced it — so the next ticket doesn't repeat it. No retractions → skip silently.
 
 ---
 
@@ -101,7 +107,7 @@ On any write failure, surface git's error verbatim and ask `[1] Retry  [2] Manua
 
 ### 1. Commit
 
-Stage tracked changes, excluding `*-TASK.md`, `*-PLAN.md`, `.env`, `.env.*` (but keep `.env.example` / `.env.sample`), and anything the user excluded at the review gate. Show the staged list alongside the approved message, then ask.
+Stage changed and new files by path — `git status --porcelain` `??` entries included, since a test or module created this ticket is invisible to `git diff HEAD` — excluding `*-TASK.md`, `*-PLAN.md`, `*-LOG.md`, `break-*.md`, `.env`, `.env.*` (but keep `.env.example` / `.env.sample`), and anything the user excluded at the review gate. Show the staged list alongside the approved message, then ask.
 
 - Run → `git commit -m "{message}"`
 - Manual → print the command
@@ -113,7 +119,7 @@ Stage tracked changes, excluding `*-TASK.md`, `*-PLAN.md`, `.env`, `.env.*` (but
 
 ### Done
 
-Commit hash, branch, base. Known Issues if shipped with failures. Note if the user overrode the protected-branch check. Then hand off the next step in a fenced block:
+Commit hash, branch, base. Known Issues if shipped with failures. Note if the user overrode the protected-branch check. Run the retraction handoff (see Scope). Then hand off the next step in a fenced block:
 
 - **Path 1** (commit only) — `git push -u origin {branch}`.
 - **Path 2, follow-up PR** — print `Pushed to #{N}` and the existing PR URL. No description to copy.
@@ -123,10 +129,7 @@ Commit hash, branch, base. Known Issues if shipped with failures. Note if the us
 
 ## Guardrails
 
-- **Approval gates every write.** Commit and push — user says yes, or it doesn't happen.
 - **No hook bypass, no force-push.** `--no-verify`, `--force`, `--force-with-lease` — manual only.
 - **No rewriting history.** No `--amend`, `reset --hard`, `checkout --`, `clean -fd`, `stash drop`, `branch -D`, `rebase`. Append-only; the user handles history.
 - **Stage by path.** Only what the gate showed. No `git add -A` or `git add .`.
-- **Abort leaves state as-is.** Don't unstage, revert, or clean up.
 - **Message is the message.** No trailers or metadata beyond what the user approved.
-- **Follow conventions.** CLAUDE.md, PR template, branch naming — adapt to what exists.

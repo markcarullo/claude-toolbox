@@ -5,10 +5,12 @@ description: "Pressure-test code, a plan, or an asserting artifact (skill, doc, 
 
 # examine
 
-Pressure-test existing work via an Advocate/Adversary loop. In-memory only — no files change. Output: a recommendation, a confirmation it holds, or unresolved gaps.
+Pressure-test existing work via an Advocate/Adversary loop. In-memory only — nothing changes but the log. Output: a recommendation, a confirmation it holds, or unresolved gaps.
 
-**Voice.** Point first — what surfaced, what held, what to do; reasoning after, and only if it earns its place. Cut filler: no preamble ("Great question", "Let me…"), no hedging, no restating the ask. Compress hard — half the words, all the meaning; past ~4 lines a paragraph becomes a list. Minimize inline output — the value is the outcome, not the play-by-play. One line per round, naming what was tested and what surfaced (or held). The recommendation lands scannable-first (the Outcome table) before the full revised artifact. Numbered options for fast-loop discrete asks like the outcome screen (`[1] X  [2] Y  [3] Z`); `AskUserQuestion` for destructive picks, ambiguous labels, or comparable previews; open-ended asks stay prose. Clickable file refs into the target (`[migration.ts:42](src/migration.ts#L42)`). On exit, present the outcome and wait. No narration, no transitions, no preamble, no trailing recap.
+**Voice.** Point first; reasoning only where the decision turns on it. No preamble, no hedging, no restating the ask. Past ~4 lines a paragraph becomes a list. Here the point is what surfaced, what held, what to do. Minimize inline output — the value is the outcome, not the play-by-play. One line per round, naming what was tested and what surfaced (or held). The recommendation lands scannable-first (the Outcome table); a long revised artifact waits behind `[4]`. Numbered options for fast-loop discrete asks like the outcome screen (`[1] X  [2] Y  [3] Z`); `AskUserQuestion` for destructive picks, ambiguous labels, or comparable previews; open-ended asks stay prose. Clickable file refs into the target (`[migration.ts:42](src/migration.ts#L42)`).
 ✓ `Adversary: step 3 assumes the migration is idempotent — not verified.`  ✗ `Let me now have the Adversary take a look. It seems to me that step 3 might be making an assumption about idempotency that we haven't really verified yet.`
+
+**Log.** With a task file in play, keep the decision trail in `{TICKET}-LOG.md` beside it — one line per entry, appended from the shell (`printf '%s\n' "- $(date +%FT%R) {line}" >> {TICKET}-LOG.md`), never via `Write`/`Edit`, never from a subagent. No task file, no log. `enter [examine] plan` on entry with the target and mode; `outcome` on exit (`holds`, `recommendation · 3 changes`, or `did not converge`). Did not converge on a heading the log records as a `fork` → add `retract →#slug` with the unresolved gap. This is the one write `examine` makes.
 
 ## Target
 
@@ -20,20 +22,22 @@ $ARGUMENTS
 
 ### Detect the target
 
-**Continuation first.** If a loop already ran this session and `$ARGUMENTS` is bare or refers back to it — `findings`, `further`, `staged changes`, `scrutinize findings`, `that refinement further`, or empty — this is a continuation, not a new target. Keep the previous target and mode; don't re-detect and don't restart at round 1. Resume one altitude deeper than where the last loop stopped, exactly as a Round 2+ would. If the last loop already reached detail, say so and attack the revisions themselves rather than re-running the same pass.
+**Continuation first.** If a loop already ran this session and `$ARGUMENTS` is bare or refers back to it — `findings`, `further`, `scrutinize findings`, `that refinement further`, or empty — this is a continuation, not a new target. Keep the previous target and mode; don't re-detect and don't restart at round 1. Resume one altitude deeper than where the last loop stopped, exactly as a Round 2+ would. If the last loop already reached detail, say so and attack the revisions themselves rather than re-running the same pass.
 
 If `$ARGUMENTS` names what to examine, classify: design-shaped (approach, sequencing, architecture) → plan mode; implementation-shaped → code mode; assertion-shaped (skills, docs, handovers, READMEs — text that *asserts* rather than proposes or executes) → audit mode.
 
 Otherwise detect in order:
 
-1. Glob `*-PLAN.md` in cwd. Exactly one → plan mode. Multiple → match against branch name; one match wins, otherwise ask with numbered options. None → fall through.
-2. Staged changes or recently edited files → code mode.
+1. Glob `*-PLAN.md` in cwd. Exactly one, and no substantive uncommitted diff → plan mode. Exactly one, and `git diff HEAD` shows the plan being implemented → code mode, one line saying so (`Plan is in the tree — examining the diff`). Multiple → match against branch name; one match wins, otherwise ask with numbered options. None → fall through.
+2. Uncommitted, staged, or recently edited files → code mode.
 3. Recently edited `.md` / `.html` / docs not matching `*-PLAN.md` → audit mode.
 4. Conversation context → infer from what's been discussed.
 
+Code mode also globs `*-TASK.md` as the sibling skills do: exactly one → read it for the AC map; multiple → match against the branch name, one match wins, otherwise ask with numbered options; none → skip the AC map.
+
 If nothing is clear, ask: "What are we examining?"
 
-Read the target before starting. Hold: what it does, what it assumes, what's load-bearing.
+Read the target before starting, and `{TICKET}-LOG.md` if present. Hold: what it does, what it assumes, what's load-bearing, and which of its headings the log shows as chosen forks or retractions — the Adversary attacks a fork's criterion, not a heading the log already retracted.
 
 **Plan mode — reconcile before the loop.** Glance at `git status` and recent commits. If the working tree has already moved past parts of the plan, surface it once: `Plan covers steps 1-5; commits show 1-3 landed. Examine the rest, or the whole plan?` A pressure-test of an already-executed step is cheap noise — examine what's still ahead unless the user wants the full sweep. If the plan is *entirely* behind the commits, route to audit mode instead — the artifact is now historical, attack it for accuracy not sequencing.
 
@@ -63,7 +67,7 @@ Round 2+: go _deeper_, not wider. Scrutinize the revisions and the structure und
 
 **Plan mode:** requirements coverage, sequencing (foundational-first), gap detection, scope realism, actionability, test strategy (level per behavior with a reason).
 
-**Code mode:** correctness, edge cases, guard clauses, error handling, side effects, readability, test coverage.
+**Code mode:** correctness, edge cases, guard clauses, error handling, side effects, readability, test coverage. With a TASK file present: each AC mapped to the diff (✓ / ~ / ✗), and one frame pass at any size — is this shape still the right one, or a local fix to the plan's shape?
 
 **Audit mode:** claim grounding (each assertion names its evidence — code, test, fixture, JIRA), internal congruence (sections, rules, examples agree), external accuracy (referenced artifacts exist and say what's claimed), load-bearing audit (every part earns its tokens; what could be cut without loss?).
 
@@ -129,9 +133,9 @@ The loop ends when any of these is true:
 
 ## Outcome
 
-Never write to files. Present the outcome and wait.
+Never write to files beyond the log lines. Present the outcome and wait. Invoked by another skill (`/converge`), the caller consumes the outcome — no wait.
 
-Optimize for at-a-glance understanding — the reader should see what surfaced and what to do without wading through prose. Lead with the scannable layer, put the full artifact below it. (Structurally congruent with `break`'s outcome by design: same status → scannable-layer → body → numbered-options shape, each gating its table on two-or-more. The columns and body differ because `examine` recommends and `break` reports.)
+Optimize for at-a-glance understanding — the reader should see what surfaced and what to do without wading through prose. Lead with the scannable layer, put the full artifact below it.
 
 ### Holds as-is
 
@@ -143,7 +147,7 @@ Nothing to change.
 
 ### Recommendation
 
-Present what the Advocate revised and why — a recommendation, not an edit. **Two or more changes → a table** so they scan; **exactly one → a short prose block**, no table overhead. Then the full revised artifact below, for the reader who wants it.
+Present what the Advocate revised and why — a recommendation, not an edit. **Two or more changes → a table** so they scan; **exactly one → a short prose block**, no table overhead. The full revised artifact inline only when it is under ~15 lines; otherwise on request (`[4]`).
 
 ```
 Here's what I'd change.
@@ -154,14 +158,15 @@ Here's what I'd change.
 | 2 | ... | ... | ... |
 
 --- revised {plan / code / diff} ---
-{the full revised output}
+{the full revised output, if short — else omit}
 
-[1] Apply  [2] Adjust  [3] Discard
+[1] Apply  [2] Adjust  [3] Discard  [4] Show full revision
 ```
 
-- **Apply** — hand off to the user to integrate (the skill never writes).
+- **Apply** — hand off to the user to integrate.
 - **Adjust** — user names what's off, re-present.
 - **Discard** — close.
+- **Show full revision** — print the full revised artifact, then re-present the options.
 
 ### Did not converge
 
@@ -169,16 +174,14 @@ Here's what I'd change.
 This needs rethinking.
 
 {unresolved gaps, one per line}
+
+[1] Reshape in /unpack — a different structure, not a patch  [2] Stop — take it to a human
 ```
 
 ---
 
 ## Guardrails
 
-- **No writes during the loop.** In-memory until the user approves.
 - **Never soften the Adversary.**
 - **Never inflate findings.** If the work is solid, say so.
-- **Exhibit failures are not negotiable.** Red tests, type errors, lint errors — concede, don't argue.
-- **Observed / inferred / guessed.** "I see X" / "this suggests Y" / "guessing — worth checking."
 - **Read it before claiming it's absent.** "This lacks X" requires opening the file and looking. A grep miss is not absence — substring hits lie in both directions, and a claim sourced from a match you didn't read is guessed, never observed.
-- **Follow conventions.** Codebase patterns visible in the target and CLAUDE.md if present.

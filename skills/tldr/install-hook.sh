@@ -26,11 +26,13 @@ set -euo pipefail
 SETTINGS="$HOME/.claude/settings.json"
 FLAG_HINT="$HOME/.claude/.tldr-off-<session_id>"
 
-# Structure clause is conditional ("when structure reads faster") rather than
-# absolute: this reminder now fires during dialogue skills like /unpack too,
-# where bulleting a Socratic question would be wrong. Walls stay banned; the
-# choice of bullets vs sentences is left to the content.
-REMINDER='[tldr mode is ON] Reply in tldr style: point first, hard-compressed, no filler; structure for the eye when structure reads faster (bullets/tables over walls — never a wall either way), action items called out, emojis rare and only to disambiguate. Keep code, commands, paths, and errors byte-exact.'
+# The structure clause is conditional ("only where they read faster than
+# sentences"), not absolute: this fires during dialogue skills like /unpack too, where
+# bulleting a Socratic question would be wrong. Walls stay banned; bullets
+# vs sentences follows the content.
+# No double quotes, single quotes, backslashes or % in REMINDER: it is spliced
+# into a printf format string inside a JSON literal below.
+REMINDER='[tldr mode is ON] Write so the reader can decide. Lead with the call. When there is a real choice, name each live option and its cost in one line each; otherwise no table. Mark inline what is observed, inferred, or guessed; no separate section for it. Reasoning only where the decision turns on it, and nothing the reader did not ask for. Plain sentences: no clipped fragments, no dash-chains, no aphorisms, no closing flourish. At a decision point, a warning, an irreversible action, or a multi-step sequence, nothing is left implicit: every step runnable as written, every warning with its consequence. No narration of what you are about to do or just did. Bullets and tables only where they read faster than sentences. Code, commands, paths, and negations byte-exact; for an error, the failing line exactly, not the dump. Budget: about 12 lines and one table; go past it only when the ask is an audit or the reader asked for more. ✓ Stale after refresh: the key is never invalidated (cache.ts:48, observed). Fix there, or in the poll tick, which adds a second race.  ✗ Great question, so there are a few things going on here that are worth walking through. A bare what? means the last reply failed: answer in three lines, do not re-explain.'
 
 # The command the hook runs on every UserPromptSubmit. Cheap: read the
 # session id from stdin, test one per-session off-flag. Fires for EVERY
@@ -60,15 +62,16 @@ else
   BASE='{}'
 fi
 
-# Merge: append our UserPromptSubmit hook, preserving every existing hook.
-# Dedup by command string so re-running doesn't stack duplicates.
+# Merge: replace our UserPromptSubmit hook, preserving every other hook.
+# Matched by the sentinel, not the full command, so a changed REMINDER
+# replaces the old entry instead of stacking a second one.
 UPDATED="$(printf '%s' "$BASE" | jq --arg cmd "$HOOK_CMD" '
   .hooks //= {}
   | .hooks.UserPromptSubmit //= []
-  | if any(.hooks.UserPromptSubmit[]?; .hooks[]?.command == $cmd)
-    then .
-    else .hooks.UserPromptSubmit += [{"hooks": [{"type": "command", "command": $cmd}]}]
-    end
+  | .hooks.UserPromptSubmit |= map(select(
+      (.hooks // []) | any(.command? // "" | startswith("# tldr-reinforce-hook")) | not
+    ))
+  | .hooks.UserPromptSubmit += [{"hooks": [{"type": "command", "command": $cmd}]}]
 ')"
 
 # Write atomically via a temp file in the same dir.

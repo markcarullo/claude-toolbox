@@ -1,18 +1,18 @@
 ---
 name: tdd
-description: "Establish a feedback loop before writing the implementation — turn the AC into failing tests, confirm each is RED for the right reason, then hand off to /collab to drive them green. Defaults to the TASK/PLAN in cwd; also takes a behavior described in prose. Writes test files only, never the implementation. Usage: /tdd [what to test]"
+description: "Establish a feedback loop before writing the implementation — turn the AC into failing tests, confirm each is RED for the right reason, then hand off to /converge to drive them green. Defaults to the TASK/PLAN in cwd; also takes a behavior described in prose. Writes test files (and log lines) only, never the implementation. Usage: /tdd [what to test]"
 ---
 
 # tdd
 
-The loop you build before you build. In the chain between planning and building (`start → unpack → tdd → collab → break → ship`), `tdd` is the only step that authors tests before the code exists: `unpack` decides *what* to build and at *which* level, `tdd` writes those tests red, `collab` drives them green. A deliberate, separate move; a clean exit points straight at `/collab`.
+The loop you build before you build. In the chain `start → unpack → tdd → converge → minimal → break → ship`, `tdd` is the only step that authors tests before the code exists: `unpack` decides *what* to build and at *which* level, `tdd` writes those tests red, `converge` drives them green. `tdd` writes test files and its log lines, nothing else — never the implementation, never makes a test pass, never ships. The handoff is the boundary: red tests in the tree, the implementation left for `converge`.
 
 The discipline is the point. A test written after the code passes because the code shaped it. A test written first fails *first* — and one that fails for the *wrong* reason (a typo, a missing import, an unwired harness) is worse than no test, because the later green looks like proof when it isn't. So every test here earns a confirmed red: it fails, and it fails because the behavior is genuinely absent, not because the scaffolding is broken.
 
-`tdd` writes test files and nothing else — never the implementation, never makes a test pass, never ships. The handoff is the boundary: red tests in the tree, the implementation left for `collab`.
-
-**Voice.** Point first — the red/green result, the behavior, the verdict up front; reasoning after, and only if it earns its place. Cut filler: no preamble ("Great question", "Let me…"), no hedging, no restating the ask. Compress hard — half the words, all the meaning; past ~4 lines a paragraph becomes a list. Terse for status (intake, the red-confirmation table, handoff). Bullets and tables for multi-item content — behaviors, AC mapping, red/green status. Numbered options for fast-loop choices (`[1] X  [2] Y  [3] Z`); `AskUserQuestion` for destructive picks, ambiguous labels, or comparable previews. Prose in active dialogue where a test-design trade-off carries nuance. Clickable file refs (`[cache.test.ts:12](src/cache.test.ts#L12)`). Distinguish observed / inferred / guessed — a test you ran and watched fail is observed; "this should fail" before running is a guess until confirmed. No preamble, no trailing recap.
+**Voice.** Point first; reasoning only where the decision turns on it. No preamble, no hedging, no restating the ask. Past ~4 lines a paragraph becomes a list. Here the point is the red/green result, the behavior, the verdict. Terse for status (intake, the red-confirmation table, handoff). Bullets and tables for multi-item content — behaviors, AC mapping, red/green status. Numbered options for fast-loop choices (`[1] X  [2] Y  [3] Z`); `AskUserQuestion` for destructive picks, ambiguous labels, or comparable previews. Prose in active dialogue where a test-design trade-off carries nuance. Clickable file refs (`[cache.test.ts:12](src/cache.test.ts#L12)`). Distinguish observed / inferred / guessed — a test you ran and watched fail is observed; "this should fail" before running is a guess until confirmed.
 ✓ `3 behaviors → 3 tests. All red: 2 for the right reason, 1 errored on a missing import — fixing.`  ✗ `I've written the tests for you. They should all be failing now since we haven't written the implementation yet, which is exactly what we want in TDD.`
+
+**Log.** With a task file in play, keep the decision trail in `{TICKET}-LOG.md` beside it — one line per entry, appended from the shell (`printf '%s\n' "- $(date +%FT%R) {line}" >> {TICKET}-LOG.md`), never via `Write`/`Edit`, never from a subagent. No task file, no log. `enter [tdd] AC 1–3` on entry with the target; `outcome` at handoff (`3 tests red for the right reason · handed to /converge`). A test level chosen over a viable alternative (unit vs integration for the same behavior) is a `fork#slug` line.
 
 ## Target
 
@@ -53,7 +53,7 @@ For each behavior, fix three things:
 
 **Decompose compound AC.** "Validates the input **and** logs the rejection" is two behaviors — two tests. The half that silently ships untested is usually the side effect (the log, the metric, the event), not the return value. Split before writing.
 
-**Name the gaps the AC doesn't.** The AC states the happy path; the edge cases are where the implementation will actually break. Surface the ones worth a test — empty input, the boundary, the concurrent case, the error path — and ask which to frame now versus leave to `break` later. Don't silently write tests for behaviors no one agreed to, and don't silently skip the obvious edge.
+**Name the gaps the AC doesn't.** The AC states the happy path; the edge cases are where the implementation will actually break. Surface the ones worth a test — empty input, the boundary, the concurrent case, the error path — and ask per edge, as numbered options so `/steady N` answers, which to frame now versus leave to `break` later. Don't silently write tests for behaviors no one agreed to, and don't silently skip the obvious edge.
 
 Present the map for confirmation before writing — a short table, one row per behavior: what it asserts / level / why. The user adjusts here, where it's cheap, not after the files exist.
 
@@ -65,7 +65,7 @@ Present the map for confirmation before writing — a short table, one row per b
   2  valid id → 200 + body                     unit         same
   3  malformed body → 422, nothing persisted   integration  needs the persistence boundary
 
-  Edge not in AC: empty id string. Frame it now, or leave to /break?
+  Edge not in AC: empty id string.  [1] Frame now  [2] Leave to /break
 ```
 
 ---
@@ -128,17 +128,16 @@ FRAMED
 
   Test command: npm test -- cache
 
-  Next: /collab — drive them green one at a time.
-        Run the command on a watch; each save tells you if you moved closer.
+  Next: /converge — drive them green one at a time.
 ```
 
 Offer next steps:
 
 ```
-[1] Hand off to /collab   [2] Frame another behavior   [3] Done
+[1] Hand off to /converge   [2] Frame another behavior   [3] Done
 ```
 
-- **Hand off to /collab** — close; the user picks up implementation against the live loop.
+- **Hand off to /converge** — close; `/converge` drives them green.
 - **Frame another behavior** — back to the behavior map for the next AC or edge case.
 - **Done** — close.
 
@@ -148,11 +147,6 @@ If the PLAN's Testing section listed behaviors not yet framed, name them in the 
 
 ## Guardrails
 
-- **Tests only.** `tdd` writes test files and nothing else — never the implementation, never a fixture's production counterpart, never config beyond what the test needs to run. If the harness itself needs standing up, surface it as work, don't silently scaffold a framework.
-- **Never make a test pass.** Going green is `collab`'s job. A test that's green at handoff is either redundant or theater — flag it, don't keep it.
-- **No right-reason red, no handoff.** A wrong-reason red is a broken test. Fix it or report the blocker; never present scaffolding-failure as a TDD red.
-- **Confirm the map before writing.** The behavior decomposition is where the value is — get it agreed before files exist, not after.
-- **Observed / inferred / guessed.** A red you ran and read is observed. "This should fail" is a guess until confirmed. Report only confirmed reds as framed.
-- **Match the project's test style.** Mirror the nearest test — framework, naming, fixtures, location. Don't introduce a second convention.
+- **Never make a test pass.** Going green is `converge`'s job. A test that's green at handoff is either redundant or theater — flag it, don't keep it. Never a fixture's production counterpart, never config beyond what the test needs to run.
 - **Don't over-frame.** Frame the behaviors the contract names plus the edges the user agrees to. Speculative tests for behaviors no one asked for are noise; the unhandled-state hunt belongs to `/break`.
-- **No shipping.** Don't stage, commit, or push. The tree is left with red tests for `collab` to pick up.
+- **No shipping.** Don't stage, commit, or push. The tree is left with red tests for `converge` to pick up.

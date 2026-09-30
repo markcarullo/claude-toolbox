@@ -9,8 +9,10 @@ Orient the user, then set up the workspace. The brief is the artifact — aim we
 
 Collaborate on ambiguity rather than guessing. Stay grounded in what's given — ticket text and a light scan — not speculation. Don't skip steps or proceed past a blocking failure without user input.
 
-**Voice.** Point first — the finding, the gap, the status up front; reasoning after, and only if it earns its place. Cut filler: no preamble ("Great question", "Let me…"), no hedging, no restating the ask. Compress hard — half the words, all the meaning; past ~4 lines a paragraph becomes a list. Terse for status chatter (intake, self-review, summary, launch). Bullets and tables for multi-item content (leads, gaps, AC). Numbered options for fast-loop choices (`[1] X  [2] Y  [3] Z`); `AskUserQuestion` for destructive picks, ambiguous labels, or comparable previews. Clickable file refs in chat (`[cache.ts:42](src/cache.ts#L42)`); TASK.md keeps plain backtick paths. No preamble, no trailing recap. Distinguish observed / inferred / guessed — leads especially: a grep hit is observed, "this is probably where it lives" is inferred. Flag unverified hunches so the brief doesn't ossify them as fact.
+**Voice.** Point first; reasoning only where the decision turns on it. No preamble, no hedging, no restating the ask. Past ~4 lines a paragraph becomes a list. Here the point is the finding, the gap, the status. Terse for status chatter (intake, self-review, summary, launch). Bullets and tables for multi-item content (leads, gaps, AC). Numbered options for fast-loop choices (`[1] X  [2] Y  [3] Z`); `AskUserQuestion` for destructive picks, ambiguous labels, or comparable previews. Clickable file refs in chat (`[cache.ts:42](src/cache.ts#L42)`); TASK.md keeps plain backtick paths. Distinguish observed / inferred / guessed — leads especially: a grep hit is observed, "this is probably where it lives" is inferred. Flag unverified hunches so the brief doesn't ossify them as fact.
 ✓ `PROJ-1234 fetched (Bug, 3 ACs). Leads: src/cache.ts, src/dashboard.ts.`  ✗ `I've successfully fetched the ticket PROJ-1234. It has 3 acceptance criteria and I found 2 leads. We're ready to proceed.`
+
+**Log.** The decision trail for a ticket lives in `{TICKET}-LOG.md` beside the task file, and it starts here — one line per entry, appended from the shell (`printf '%s\n' "- $(date +%FT%R) {line}" >> {TICKET}-LOG.md`), never via `Write`/`Edit`, never from a subagent. Write `enter [start] PROJ-1234` and then `outcome` (`TASK written · 3 AC · 2 leads`) in the Write task file step, both into the task file's directory — so a worktree gets one log, and an abort after the fetch leaves none. Sibling skills append `fork` and `retract` lines later, `/steady` appends `steer`; `start` writes only these two.
 
 ## Ticket
 
@@ -130,6 +132,10 @@ Scale to the ticket's complexity — simple tickets get core sections only; comp
 ## Open Questions
 
 {Or "None."}
+
+## Deferred
+
+{Findings parked with a condition — `{finding} — until {condition}`. `/ship` re-checks each. Or "None."}
 ```
 
 ---
@@ -174,5 +180,6 @@ READY
   AI-assisted? Open Claude Code and try:
 
     /unpack — to plan your approach before writing code
-    /collab — to pair on the implementation
+    /tdd    — to turn the AC into failing tests first
+    /converge — to descend on the implementation autonomously
 ```

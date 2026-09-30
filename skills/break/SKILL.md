@@ -1,20 +1,20 @@
 ---
 name: break
-description: "Pre-ship adversarial gate — try to break the change you just built, before you ship it. An Attacker proposes breakages; a Skeptic tries to refute each one's reachability. Only findings with a traceable path to the bad state survive. Defaults to the uncommitted diff against its TASK/PLAN; also takes an area, a PR, or a workflow. Report-only — ranked findings plus a doc, never files a ticket. Usage: /break [what to attack]"
+description: "Pre-ship adversarial gate — try to break the change you just built, before you ship it. An Attacker proposes breakages; a Skeptic tries to refute each one's reachability. Only findings with a traceable path to the bad state survive. Defaults to the uncommitted diff against its TASK/PLAN; also takes an area, a PR, or a workflow. Ranked findings, each with its fix and the test that names it; writes nothing but a report doc on request, never files a ticket. Usage: /break [what to attack]"
 ---
 
 # break
 
-The last adversarial look before you ship — the stop between `collab` and `ship` (`collab → break → ship`): try to break what you just wrote while it's still cheap to fix. A separate, deliberate step; `ship` doesn't run it for you, and `break` never ships. The bar is high: a breakage counts only if you can trace how the system reaches the state that triggers it. "What if this were null" is not a finding; "this is null whenever an add is interrupted mid-flow, and here's the path" is.
-
-The class of bug to hunt — *worked example from one codebase; the mechanism generalizes*: a real fix (a duplicate-name check) that wasn't null-safe against a state the system itself produces (an entity created in step one of a two-phase add, not yet named in step two). No user did anything wrong — the code just didn't account for its own reachable states. The engine below is domain-neutral; the example is illustrative.
+The last adversarial look before you ship — the stop before `ship` (`converge → minimal → break → ship`): try to break what you just wrote while it's still cheap to fix. A separate, deliberate step; `ship` doesn't run it for you, and `break` never ships. The bar is high: a breakage counts only if you can trace how the system reaches the state that triggers it. "What if this were null" is not a finding; "this is null whenever an add is interrupted mid-flow, and here's the path" is.
 
 Not to be confused with `examine` code mode: the posture is opposite. `examine` *defends* — an Advocate argues the work is sound and concedes only what the Adversary breaks. `break` has nothing to defend — it assumes something is reachable-broken and hunts. Reach for `break` when the risk is an unhandled state the happy path never visits.
 
-In-memory only — `break` never writes (beyond one optional report doc), never edits the target, never ships, never files. It finds; you fix or file (Outcome covers disposition). A clean pass ends by pointing at `/ship`.
+The loop writes nothing (beyond one optional report doc and its log lines), never edits the target, never ships, never files. It finds, then names the remedy: every survivor leaves with a concrete fix and the test that names it, and the fixes land only on your go-ahead — the same handoff as `examine`'s Apply. A clean pass ends by pointing at `/ship`.
 
-**Voice.** Point first — the breakage, its severity, what to do; reasoning after, and only if it earns its place. Cut filler: no preamble ("Great question", "Let me…"), no hedging, no restating the ask. Compress hard — half the words, all the meaning; past ~4 lines a paragraph becomes a list. Minimize the play-by-play — the value is the surviving findings, not the sparring. One line per round naming what was attacked and whether it survived refutation. Findings land scannable-first (the Outcome table), never a stack of prose stanzas. Numbered options for fast-loop discrete asks (`[1] X  [2] Y  [3] Z`); `AskUserQuestion` for ambiguous target picks or comparable previews; open-ended asks stay prose. Clickable file refs into the target (`[PrimeBrokersPanel.tsx:71](src/view/routes/admin/organisation/OrganisationDialog/PrimeBrokersPanel.tsx#L71)`). Distinguish observed / inferred / guessed — a code path you read is observed, a state you believe is reachable is inferred until traced. No preamble, no trailing recap.
-✓ `Attacker: normalize(name) over the list — name is null for a created-not-named entity. Skeptic: is that state reachable? Yes — an interrupted two-phase add leaves it (producer at workflowEpic.ts:231). Survives.`  ✗ `Let me have the Attacker take a look here. It seems like there might be a potential null issue worth exploring around the name handling.`
+**Voice.** Point first; reasoning only where the decision turns on it. No preamble, no hedging, no restating the ask. Past ~4 lines a paragraph becomes a list. Here the point is the breakage, its severity, what to do. Minimize the play-by-play — the value is the surviving findings, not the sparring. One line per round naming what was attacked and whether it survived refutation. Findings land scannable-first (the Outcome table), never a stack of prose stanzas. Numbered options for fast-loop discrete asks (`[1] X  [2] Y  [3] Z`); `AskUserQuestion` for ambiguous target picks or comparable previews; open-ended asks stay prose. Clickable file refs into the target (`[CheckoutPanel.tsx:71](src/checkout/CheckoutPanel.tsx#L71)`). Distinguish observed / inferred / guessed — a code path you read is observed, a state you believe is reachable is inferred until traced.
+✓ `Attacker: normalize(name) over the list — name is null for a created-not-named entity. Skeptic: is that state reachable? Yes — an interrupted two-phase add leaves it (producer at orderFlow.ts:231). Survives.`  ✗ `Let me have the Attacker take a look here. It seems like there might be a potential null issue worth exploring around the name handling.`
+
+**Log.** With a task file in play, keep the decision trail in `{TICKET}-LOG.md` beside it — one line per entry, appended from the shell (`printf '%s\n' "- $(date +%FT%R) {line}" >> {TICKET}-LOG.md`), never via `Write`/`Edit`, never from a subagent. No task file, no log. `enter [break] local diff` on entry with the target; `outcome` on close (`2 confirmed · 0 unverified · 1 killed`). This is the one write `break` makes besides the report doc.
 
 ## Target
 
@@ -33,7 +33,7 @@ $ARGUMENTS
 | **Local diff** *(default)* | empty, "this", "what I just built" | `git diff HEAD` (+ staged) — the change about to ship, read against its TASK/PLAN |
 | **Area** — a file, component, module | A path, a component name, "attack the X panel" | Read the named code and its immediate collaborators |
 | **PR / commit** — review someone else's, or a past change | A PR URL/number, a commit hash | `gh pr diff` / `git show` — attack the blast radius of that change |
-| **Workflow** — a user journey end-to-end | "the add-prime-broker flow", "the rerate journey" | Trace every state transition in the journey; probe each for unhandled states |
+| **Workflow** — a user journey end-to-end | "the signup flow", "the checkout journey" | Trace every state transition in the journey; probe each for unhandled states |
 
 Detection order when `$ARGUMENTS` is empty or ambiguous:
 
@@ -44,13 +44,13 @@ Detection order when `$ARGUMENTS` is empty or ambiguous:
 
 **Repo guard.** `git rev-parse --is-inside-work-tree`; on failure ask for an absolute path. Read `CLAUDE.md` if present — conventions tell you what states the codebase considers valid, which sharpens reachability judgments.
 
-**Pair the diff with its intent** _(the pre-ship move)_. Glob `*-TASK.md` / `*-PLAN.md` in cwd as `start`, `collab`, `unpack`, and `ship` do — exactly one → read it; multiple → match against the branch name. In local-diff mode this is the core of the gate: the TASK/PLAN is what the change was *supposed* to do, the diff is what it *actually* does, and the breakages live in the gap — the states the AC implies but the diff doesn't handle, the new code path the author had a clean mental model of while the system can put it in a dirtier one. Read the intent, then hunt the states it forgot. Absent → proceed against the diff alone; `break` does not require a workspace.
+**Pair the diff with its intent** _(the pre-ship move)_. Glob `*-TASK.md` / `*-PLAN.md` in cwd as `converge`, `unpack`, and `ship` do — exactly one → read it; multiple → match against the branch name. In local-diff mode this is the core of the gate: the TASK/PLAN is what the change was *supposed* to do, the diff is what it *actually* does, and the breakages live in the gap — the states the AC implies but the diff doesn't handle, the new code path the author had a clean mental model of while the system can put it in a dirtier one. Read the intent, then hunt the states it forgot. Absent → proceed against the diff alone; `break` does not require a workspace.
 
 Read the target before the loop. Hold: what it does, what states it can be in, what it assumes about its inputs, what produces those inputs.
 
 ### Map the state space (the core move)
 
-Before attacking, enumerate the states the target can actually occupy — not the happy-path states the author had in mind, but every state the *system* can put it in. This is where the worked example lived: the author assumed the entity always has a name; the system produces nameless ones during a two-phase add.
+Before attacking, enumerate the states the target can actually occupy — not the happy-path states the author had in mind, but every state the *system* can put it in. The canonical case: the author assumed the entity always has a name; the system produces nameless ones during a two-phase add. No user did anything wrong — the code didn't account for its own reachable states.
 
 For the target, list:
 
@@ -144,15 +144,24 @@ Then read the user's posture:
 - **Findings stand** — one or more breakages survived refutation with a traced path. The loop ends when no new survivors emerge.
 - **Exhausted** — 3 rounds done, some candidates remain unverified (reachability needs runtime). Report them as such.
 
+### The remedy pass
+
+Runs after the loop, before the report — no survivor reaches the options screen without it. For each confirmed finding, fix two things:
+
+- **The change** — the concrete edit at `path:line`, one line. "Null-guard `normalize(name)`" / "filter nameless entities before `.some`". Not a direction, an edit.
+- **The test** — the assertion that goes red until the change lands, in the project's test style, at the level that can observe it. This is what `/converge` gate 3 consumes, and what `/tdd` would have written had the state been in the AC.
+
+A finding whose remedy can't be stated from here — it needs runtime state, or the fix lives outside the target — says so on its line and is the one that goes to the report doc. The rest carry an edit and a test.
+
 ---
 
 ## Outcome
 
-Never write to Jira, GitHub, or the target's files. Present the report and wait.
+The loop writes nothing to Jira, GitHub, or the target's files — the go-ahead does. Present the report and wait. Invoked by another skill (`/converge`), the caller consumes the report — no wait.
 
 ### Ranked findings
 
-Lead with what surfaced, so the reader sees every breakage, its severity, and what to do without reading prose. **Two or more confirmed findings → a table**; **exactly one → the same columns as a short block**, no table overhead. Order by severity, then confidence. Unverified and killed candidates are one-liners below.
+Lead with what surfaced, so the reader sees every breakage, its severity, and what to do without reading prose. **Two or more confirmed findings → a table**; **exactly one → the same columns as a short block**, no table overhead. Order by severity, then confidence. Unverified and killed candidates are one-liners below; an empty section is omitted.
 
 ```
 {N} breakages survived refutation, {N} killed, {N} unverified.
@@ -161,10 +170,11 @@ Lead with what surfaced, so the reader sees every breakage, its severity, and wh
 
 | # | Sev | What breaks | Where | Fix |
 |---|-----|-------------|-------|-----|
-| 1 | {SEV} | {one-line failure} | [file:line](path#Lline) | {concrete one-liner — "null-guard trimToLower" / "filter nameless before .some"} |
+| 1 | {SEV} | {one-line failure} | [file:line](path#Lline) | {the edit, from the remedy pass — "null-guard normalize(name) at cache.ts:48"} |
 | 2 | ... | ... | ... | ... |
 
   1 — reachable via: {trigger → path: producer / flow / lifecycle event}. Skeptic tried {refutation}, failed because {reason}.
+      test: {the assertion that goes red until it's fixed — "refresh during an in-flight poll → cache stays cleared"}
   2 — ...
 
 ── Unverified (reachability needs runtime) ──
@@ -174,7 +184,7 @@ Lead with what surfaced, so the reader sees every breakage, its severity, and wh
 - {candidate} — refuted by {the guard / producer behavior that makes it unreachable}
 ```
 
-The indented path line carries break's whole bar — a finding is real only because reachability was traced — so it stays, one line per finding. Drop it only when the "What breaks" cell already makes reachability self-evident.
+The indented lines carry break's whole bar — a finding is real only because reachability was traced, and actionable only because the remedy pass named its test — so both stay, one each per finding. Drop the path line only when the "What breaks" cell already makes reachability self-evident; never drop the test line.
 
 Severity: **Critical** (data loss/corruption, security, the operation is impossible), **Major** (a core workflow breaks under a reachable condition), **Minor** (degraded, a workaround exists), **Cosmetic** (display only). If the project (CLAUDE.md, a sibling skill) defines its own severity scale — domain-specific bands the team already uses — use that instead.
 
@@ -191,82 +201,27 @@ Ready to /ship.
 **Findings survived:**
 
 ```
-[1] Write the report doc  [2] Fix a finding  [3] Done
+[1] Apply — fixes and their tests  [2] Tests only — red, for /converge  [3] Write the report doc  [4] Discard
 ```
 
-- **Write the report doc** — produce the Markdown file (below). This is the only file `break` writes.
-- **Fix a finding** — for a breakage in your own diff (the pre-ship case), hand it to the user to fix in `collab` or directly; `break` does not edit the target. After fixing, re-run `break` to confirm it's closed, then `/ship`. For a finding in code *outside* your change (an area or PR you attacked), this is instead a file step: the doc is the ticket body — paste it by hand or feed it to a project's issue-analyst skill if one exists. Either way `break` does not fix and does not file — a surviving-but-unaddressed finding is better than a speculative ticket or a blind patch.
-- **Done** — close, no file.
+- **Apply** — the handoff: on your go-ahead the remedy pass's edits and tests land, the tests are run, and `break` re-runs on the result to confirm each finding is closed; then `/ship`. The loop itself wrote nothing — the go-ahead is what writes, exactly as `examine`'s Apply. A finding whose remedy line says it can't be fixed from here is skipped and named.
+- **Tests only** — write each finding's test, confirm it red for the right reason, and hand off to `/converge` to drive them green. The toolbox's own path for a breakage.
+- **Write the report doc** — produce the Markdown file (below). For a target you don't own (a PR, a workflow) this is the ticket body — paste it by hand; `break` never files.
+- **Discard** — close, nothing written but the log's `outcome`.
+
+Apply and Tests only are offered only for a target you own — the local diff, or an area in the current repo. For a PR or a workflow you don't own, the screen is `[1] Write the report doc  [2] Discard`.
 
 ### The report doc
 
-Only on request (option 1). File name: `break-<target-slug>.md` in cwd — slug from the most stable ID the target has: the ticket key (`break-BQ-13539.md`), the PR number (`break-pr-4821.md`), the file/component name (`break-PrimeBrokersPanel.md`), or a short kebab of the journey (`break-add-prime-broker.md`).
+Only on request (option 3). File name: `break-<target-slug>.md` in cwd — slug from the most stable ID the target has: the ticket key (`break-PROJ-1234.md`), the PR number (`break-pr-4821.md`), the file/component name (`break-CheckoutPanel.md`), or a short kebab of the journey (`break-signup-flow.md`).
 
-```markdown
-# Break Report: <target>
-
-**Date:** <today>
-**Target:** <local diff / area / PR or commit / workflow — with the specific path, PR, or branch>
-**Attacked:** <one line on what state space was explored>
-**Result:** <N confirmed, N unverified, N killed>
-
----
-
-## Confirmed Breakages
-
-### [<Severity>] <what breaks>
-
-- **Where:** `<path:line>`
-- **Break:** <the failure>
-- **Trigger:** <the bad state>
-- **Path to the state:** <producer, flow, lifecycle event — the traced reachability>
-- **Refutation attempted:** <what the Skeptic tried; why it failed to refute>
-- **Fix direction:** <concrete>
-
-```<language>
-<the load-bearing code snippet>
-```
-*File: `<path>`, lines <N>–<M>*
-
-<repeat per confirmed finding>
-
----
-
-## Unverified Candidates
-
-| Candidate | Why unverified | What would confirm it |
-|---|---|---|
-| <candidate> | reachability needs runtime state | <log value / repro / runtime check> |
-
----
-
-## Killed Candidates
-
-| Candidate | Refuted by |
-|---|---|
-| <candidate> | <the guard or producer behavior that makes it unreachable> |
-
----
-
-## State Map
-
-<the states the target can occupy, and which producer/flow puts it there — the reasoning that drove the hunt>
-
----
-
-*Generated by /break on <date>. Report-only — no edits, no commits, no tickets. Pre-ship: fix the diff and re-run; otherwise file the finding.*
-```
+Shape: a header (date, target with its path/PR/branch, what was attacked, the confirmed/unverified/killed counts), then the same three sections as the Outcome block — each confirmed finding as Break / Trigger / Path / Refutation attempted / Fix / Test with the load-bearing snippet and its `path:line`; unverified and killed as one-liners, as in the Outcome block — then a **State Map** section carrying the reasoning that drove the hunt, and a footer: *Report-only — no edits, no commits, no tickets. Pre-ship: fix the diff and re-run; otherwise file the finding.*
 
 ---
 
 ## Guardrails
 
-- **No writes anywhere but the report doc.** No Jira, no GitHub, no edits to the target. The doc is written only on explicit request.
+- **No survivor without a remedy line.** Every confirmed finding leaves with an edit and a test, or says why it can't from here. "Document it" is never the only thing on offer for a finding you own.
 - **No finding without a traced path.** Reachability is the bar. A breakage that needs an impossible state is not a finding — it's killed. Untraced reachability is *unverified*, never *confirmed*.
-- **Never soften the Skeptic.** Its job is to kill findings; surviving the kill is what makes a finding real.
 - **Never inflate.** If the Skeptic refutes everything, say so plainly. A clean target is a valid outcome — don't manufacture breakages to look productive.
-- **Observed / inferred / guessed.** A path you read in the code is observed. A producer behavior you believe but didn't read is inferred. A hunch is guessed — and guessed reachability lands a candidate in *unverified*, not *confirmed*.
 - **Read the guard before claiming it's missing.** "This is null-unsafe" requires confirming no upstream guard exists — grep and read it. A guard you didn't look for is not an absent guard.
-- **Find, don't fix or ship.** `break` reports; it never edits the target and never commits. The user fixes or files (Outcome covers which) — keep the blind-patch and speculative-ticket risks both on the far side of the handoff.
-- **Follow conventions.** Codebase patterns and CLAUDE.md define which states are considered valid — judge reachability against them, not against generic paranoia.
-```

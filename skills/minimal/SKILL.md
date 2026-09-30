@@ -5,14 +5,16 @@ description: "Reduce an artifact to what's load-bearing for its consumer — not
 
 # minimal
 
-Every line earns its place. Nothing to add, nothing to take away.
+Every line earns its place.
 
 Run it after the code works, before `break` and `ship`: strip what doesn't carry weight, tighten what does, and make what's left read like a person wrote it. Governs **artifacts** — code, comments, tests, docs, committed prose. Not your replies to the user (`/tldr` owns those), not how you move through a task (`/steady` owns that).
 
 Minimal is not minimalist. The floor is as real as the ceiling: a comment carrying the *why* is load-bearing no matter how short the file gets. Removing it is a silent, permanent loss — nobody reviews a deleted comment the way they review deleted code. So the cut is evidence-bound and gated; the rewrite is not.
 
-**Voice.** Point first — the cut, the rewrite, the verdict; reasoning after, and only if it earns its place. Cut filler: no preamble ("Great question", "Let me…"), no hedging, no restating the ask. Compress hard — half the words, all the meaning; past ~4 lines a paragraph becomes a list. Minimize the play-by-play — the value is the reduced artifact, not the reasoning that got there. Findings land scannable-first (the Outcome table), never a stack of prose stanzas. Numbered options for fast-loop discrete asks (`[1] X  [2] Y  [3] Z`); `AskUserQuestion` for destructive picks or comparable previews; open-ended asks stay prose. Clickable file refs into the target (`[cache.ts:42](src/cache.ts#L42)`). Distinguish observed / inferred / guessed — redundancy you traced to specific code is observed, redundancy you sense is inferred, redundancy you assume from the shape of the artifact is guessed. No preamble, no trailing recap.
+**Voice.** Point first; reasoning only where the decision turns on it. No preamble, no hedging, no restating the ask. Past ~4 lines a paragraph becomes a list. Here the point is the cut, the rewrite, the verdict. Minimize the play-by-play — the value is the reduced artifact, not the reasoning that got there. Findings land scannable-first (the Outcome table), never a stack of prose stanzas. Numbered options for fast-loop discrete asks (`[1] X  [2] Y  [3] Z`); `AskUserQuestion` for destructive picks or comparable previews; open-ended asks stay prose. Clickable file refs into the target (`[cache.ts:42](src/cache.ts#L42)`). Distinguish observed / inferred / guessed — redundancy you traced to specific code is observed, redundancy you sense is inferred, redundancy you assume from the shape of the artifact is guessed.
 ✓ `L42 "increment the counter" — restates counter++ on L43. Cut.`  ✗ `I noticed that the comment on line 42 seems like it might be a bit redundant with what the code below it is already doing.`
+
+**Log.** With a task file in play, keep the decision trail in `{TICKET}-LOG.md` beside it — one line per entry, appended from the shell (`printf '%s\n' "- $(date +%FT%R) {line}" >> {TICKET}-LOG.md`), never via `Write`/`Edit`, never from a subagent. No task file, no log. `enter [minimal] local diff` on entry with the target; `outcome` on close (`2 cuts · 5 tightened · rewrites applied, cuts discarded`).
 
 ## Target
 
@@ -83,6 +85,10 @@ Read the target. Hold: what it does, who consumes it, what each part is carrying
 
 **What doesn't** is anything already carried. It wears different names per artifact — in a comment it's *restatement* or *scaffolding*; in a skill it's a *vestigial instruction*, a *rephrasing*, or content a *sibling already owns*; in prose it's an *inventory* of what the reader can see. Same test throughout: point at what carries it, or leave it. Pointing outside the target — at a sibling, a producer, a caller — is the one case that sends you out of it: read it to confirm, and if you can't, the cut is unverified rather than proposed.
 
+**Split before you judge.** A comment carrying two clauses is two candidates; run the pointing test on each. One clause you can't point at does not keep the one you can. Stage 3 merges what survives.
+
+**The named thing it sits on points first.** Before looking further away, point at what the comment is attached to: a test title, a signature or symbol name, a factory call and the values passed to it, a heading. What that carries is restatement even when it reads as rationale — above a fixture override, *why the default wasn't enough* is answered by the override existing. If the title or name can't carry it, that is where the meaning belongs: cut the comment and name the home; the rename itself is `/converge`'s. What survives here: a trap (without this setup the test passes for the wrong reason) or an expectation that reads wrong beside its assertion.
+
 Two cases the pointing test handles differently:
 
 - **Stale content** — describes behavior that no longer exists. Verify against the current artifact before calling it stale.
@@ -132,7 +138,7 @@ Then read the user's posture from `$ARGUMENTS`:
 
 Two products, separated by blast radius. Present both, then wait.
 
-**Cuts** are proposals — never applied without a go-ahead. Two or more → a table; exactly one → a short prose block; none → say so in a line and go straight to the rewrites.
+**Cuts** are proposals — never applied without a go-ahead. Two or more → a table; exactly one → a short prose block; none → say so in a line and go straight to the rewrites. `Kept` and `Unverified` are counts with one line each at most; the full lists on request.
 
 **Rewrites** (stages 3–4) are lossless and preview as a diff, applied on approval like any edit.
 
@@ -144,11 +150,8 @@ Two products, separated by blast radius. Present both, then wait.
 | 1 | [cache.ts:42](src/cache.ts#L42) | `// increment the counter` | `counter++` on L43 |
 | 2 | ... | ... | ... |
 
-Kept — load-bearing:
-- [cache.ts:88](src/cache.ts#L88) — why the TTL is 300, not the default. Only record of it.
-
-Unverified — needs your call:
-- [auth.ts:12](src/auth.ts#L12) — looks stale, but the producer is outside the diff.
+Kept: 1 — [cache.ts:88](src/cache.ts#L88) carries why the TTL is 300. Only record of it.
+Unverified: 1 — [auth.ts:12](src/auth.ts#L12) looks stale; the producer is outside the diff.
 
 --- rewrites (preview) ---
 {the diff for stages 3-4}
@@ -159,7 +162,7 @@ Unverified — needs your call:
 - **Apply all** — cuts and rewrites.
 - **Rewrites only** — the safe half. Cuts stay proposed.
 - **Pick cuts** — user names which by number.
-- **Discard** — close, nothing written.
+- **Discard** — close, nothing written but the log's `outcome`.
 
 On close, point at the next step: `/break` to attack what's left, or `/ship` if the change is already gated. `minimal` never ships.
 
@@ -175,12 +178,9 @@ Nothing to reduce.
 
 ## Guardrails
 
-- **Never cut without pointing.** "This is redundant" requires naming the code that already says it. A guess is *unverified*, never a proposal.
 - **Cuts are gated, always.** Stages 3–4 may apply on approval like any edit; stage 2 never applies without an explicit go-ahead. Silence is not consent.
 - **The why is sacred.** Rationale, trade-offs, gotchas — if the comment is the only record, it stays. When in doubt, keep and say why.
-- **Substance is byte-exact.** Code, commands, paths, identifiers, error messages, config values. Brevity applies to prose, never to substance.
-- **Stay inside the diff.** In diff mode, don't reduce pre-existing code — it inflates the review surface. Surface it as a note instead.
 - **Never delete a test to make a suite smaller.** Redundant coverage needs both tests named and the overlap shown; a test that's merely slow or awkward is not redundant.
-- **Conventions outrank minimalism.** Required headers, licence blocks, mandated docstrings, generated-file markers — leave them.
-- **Reduce, don't rewrite.** Restructuring code, renaming, or changing behavior is out of scope — that's `/collab`. If the real problem is the code and not its noise, say so and stop.
-- **Prose follows `ship`'s writeup principle.** Carry what the source can't, claim nothing it doesn't show. `ship` holds the canonical statement — apply it, don't restate it.
+- **Same shape, same verdict.** Two comments in the same position carrying the same kind of content get one verdict in one pass, or the table names the difference.
+- **Reduce, don't rewrite.** Restructuring code, renaming, or changing behavior is out of scope — that's `/converge`. If the real problem is the code and not its noise, say so and stop.
+- **Prose follows `ship`'s writeup principle.** Carry what the source can't, claim nothing it doesn't show. `ship` holds the canonical statement.
